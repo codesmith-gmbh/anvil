@@ -61,11 +61,11 @@
 
 (defmethod ig/init-key ::bundle
   [_ {:keys [out-path with-aot?]}]
-  (print "Bundling the src and the libs")
+  (println "Bundling the src and the libs")
   (bundle/bundle out-path
                  (if with-aot?
                    {:deps-map (assoc-in (edn/read-string (slurp "deps.edn"))
-                                        [:aliases :classes :extra-paths]
+                                        [:aliases ::classes :extra-paths]
                                         ["target/classes"])
                     :aliases  [::classes]})))
 
@@ -144,5 +144,4 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
                               ::java-version    java-version})
         {:keys [::target-path]} (ig/init configuration [::target-path])]
     (clean target-path)
-    (ig/init
-      configuration)))
+    (ig/init configuration)))
