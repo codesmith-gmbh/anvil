@@ -28,7 +28,9 @@
 
 (defn path
   (^Path [f] (as-path f))
-  (^Path [f & others] (Path/of f (into-array String others))))
+  (^Path [f ^String child] (.resolve (as-path f) child))
+  (^Path [f ^String child & others]
+   (reduce path (path f child) others)))
 
 (defn make-executable [f]
   (let [^Path path (path f)]
