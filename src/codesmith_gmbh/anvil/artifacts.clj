@@ -123,7 +123,11 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
   (let [script-file (nio/path target-path "docker-build.sh")]
     (spit script-file
           (str "#!/bin/bash\n"
-               "docker build -t " (if docker-registry (str docker-registry "/") "") lib-name ":" version " .\n"))
+               "DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"\n"
+               "(
+  cd \"$DIR\" || exit
+  docker build -t " (if docker-registry (str docker-registry "/") "") lib-name ":" version " .
+)\n"))
     (nio/make-executable script-file)))
 
 
