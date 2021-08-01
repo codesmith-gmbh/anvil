@@ -1,5 +1,6 @@
 (ns codesmith.anvil.artifacts
-  (:require [badigeon.clean :as clean]
+  (:require [badigeon.classpath :as classpath]
+            [badigeon.clean :as clean]
             [badigeon.compile :as compile]
             [badigeon.bundle :as bundle]
             [clojure.edn :as edn]
@@ -39,12 +40,13 @@
   [_ aliases]
   (or aliases []))
 
-(def aot-config {::aot {:main-namespace (ig/ref ::main-namespace)}})
+(def aot-config {::aot {:main-namespace (ig/ref ::main-namespace)
+                        :aliases        (ig/ref ::aliases)}})
 
 (defmethod ig/init-key ::aot
-  [_ {:keys [main-namespace]}]
+  [_ {:keys [main-namespace aliases]}]
   (println (str "AOT compile namespace " main-namespace))
-  (compile/compile main-namespace)
+  (compile/compile main-namespace (classpath/make-classpath {:aliases aliases}))
   :aot-done)
 
 
@@ -54,7 +56,8 @@
                           identity)]
     {::bundle-out-path   {:lib-name (ig/ref ::lib-name)
                           :version  (ig/ref ::version)}
-     ::bundle            (with-aot?-merge {:out-path (ig/ref ::bundle-out-path)})
+     ::bundle            (with-aot?-merge {:out-path (ig/ref ::bundle-out-path)
+                                           :aliases  (ig/ref ::aliases)})
      ::bundle-run-script (with-aot?-merge {:out-path       (ig/ref ::bundle-out-path)
                                            :main-namespace (ig/ref ::main-namespace)})}))
 
@@ -139,14 +142,13 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
   (println "Clean target directory")
   (clean/clean (str target-path)))
 
-
 (defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version
-                                    aliases aot?] :or {aliases [] aot? true}}]
+                                    aliases aot? target-path] :or {aliases [] aot? true}}]
   (let [configuration (merge (if aot? aot-config {})
                              (bundle-config aot?)
                              docker-config
                              {::main-namespace  main-namespace
-                              ::target-path     nil
+                              ::target-path     target-path
                               ::docker-registry docker-registry
                               ::lib-name        lib-name
                               ::version         version
