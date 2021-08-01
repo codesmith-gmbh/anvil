@@ -55,8 +55,9 @@
   (let [with-aot?-merge (if with-aot?
                           #(merge % {:with-aot? (ig/ref ::aot)})
                           identity)]
-    {::bundle-out-path   {:lib-name (ig/ref ::lib-name)
-                          :version  (ig/ref ::version)}
+    {::bundle-out-path   {:lib-name    (ig/ref ::lib-name)
+                          :version     (ig/ref ::version)
+                          :target-path (ig/ref ::target-path)}
      ::bundle            (with-aot?-merge {:out-path (ig/ref ::bundle-out-path)
                                            :aliases  (ig/ref ::aliases)})
      ::bundle-run-script (with-aot?-merge {:out-path       (ig/ref ::bundle-out-path)
@@ -124,7 +125,7 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
         (str "FROM " java-docker-base-image "\n"
              "ENV VERSION=\"" version "\"\n"
              "ENV LOCATION=\":docker\"\n"
-             "COPY " (nio/relativize (nio/absolute-path target-path) bundle-out-path) " /app/\n"
+             "COPY " (nio/relativize target-path bundle-out-path) " /app/\n"
              "CMD [\"/app/bin/run.sh\"]\n")))
 
 (defmethod ig/init-key ::dockerignore-file
@@ -164,3 +165,12 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
         {:keys [::target-path]} (ig/init configuration [::target-path])]
     (clean target-path)
     (ig/init configuration)))
+
+(comment
+  (make-docker-artifact {:main-namespace 'codesmith.anvil.artifacts
+                         :lib-name       'anvic
+                         :aliases        []
+                         :version        "1.0.0"
+                         :java-version   :openjdk/jre11
+                         :aot?           false})
+  )

@@ -38,11 +38,11 @@
                                    (PosixFilePermissions/fromString "rwxr-xr-x"))))
 
 (defn ensure-directory [f]
-  (let [^Path path (path f)]
+  (let [^Path path (as-path f)]
     (Files/createDirectories path (make-array FileAttribute 0))))
 
 (defn resolve [f rel-f]
-  (.resolve ^Path (path f) (path rel-f)))
+  (.resolve ^Path (as-path f) (as-path rel-f)))
 
 (defn absolute-path [f]
   (.toAbsolutePath (as-path f)))
