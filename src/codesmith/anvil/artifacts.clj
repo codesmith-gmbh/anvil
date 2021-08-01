@@ -137,13 +137,17 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
 
 (defmethod ig/init-key ::docker-build-script
   [_ {:keys [target-path lib-name version docker-registry]}]
-  (let [script-file (nio/path target-path "docker-build.sh")]
+  (let [script-file (nio/path target-path "docker-build.sh")
+        tag-base    (str (if docker-registry (str docker-registry "/") "") lib-name ":")
+        tag         (str tag-base version)
+        latest      (str tag-base "latest")]
     (spit script-file
           (str "#!/bin/bash\n"
                "DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"\n"
                "(
   cd \"$DIR\" || exit
-  docker build -t " (if docker-registry (str docker-registry "/") "") lib-name ":" version " .
+  docker build -t " tag " .
+  docker tag " tag " " latest "
 )\n"))
     (nio/make-executable script-file)))
 
