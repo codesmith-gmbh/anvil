@@ -63,8 +63,13 @@
                                            :main-namespace (ig/ref ::main-namespace)})}))
 
 (defmethod ig/init-key ::bundle-out-path
-  [_ {:keys [lib-name version]}]
-  (bundle/make-out-path lib-name version))
+  [_ {:keys [target-path lib-name version]}]
+  (str
+    (nio/resolve
+      target-path
+      (nio/relativize
+        (nio/absolute-path (nio/path "target"))
+        (nio/path (bundle/make-out-path lib-name version))))))
 
 (defmethod ig/init-key ::bundle
   [_ {:keys [out-path with-aot? aliases]}]

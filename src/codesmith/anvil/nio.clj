@@ -41,8 +41,8 @@
   (let [^Path path (path f)]
     (Files/createDirectories path (make-array FileAttribute 0))))
 
-(defn resolve [f ^String rel-f]
-  (.resolve ^Path (path f) rel-f))
+(defn resolve [f rel-f]
+  (.resolve ^Path (path f) (path rel-f)))
 
 (defn absolute-path [f]
   (.toAbsolutePath (as-path f)))
