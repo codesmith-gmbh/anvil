@@ -124,8 +124,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
         (str "FROM " java-docker-base-image "\n"
              "ENV VERSION=\"" version "\"\n"
              "ENV LOCATION=\":docker\"\n"
-             "COPY " (nio/relativize (nio/absolute-path target-path) bundle-out-path) " /opt/app/\n"
-             "CMD [\"/opt/app/bin/run.sh\"]\n")))
+             "COPY " (nio/relativize (nio/absolute-path target-path) bundle-out-path) " /app/\n"
+             "CMD [\"/app/bin/run.sh\"]\n")))
 
 (defmethod ig/init-key ::dockerignore-file
   [_ {:keys [target-path]}]
