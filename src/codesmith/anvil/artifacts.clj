@@ -35,6 +35,9 @@
   [_ java-version]
   (assert-not-nil java-version :for ::java-version))
 
+(defmethod ig/init-key ::aliases
+  [_ aliases]
+  (or aliases []))
 
 (def aot-config {::aot {:main-namespace (ig/ref ::main-namespace)}})
 
@@ -60,14 +63,15 @@
   (bundle/make-out-path lib-name version))
 
 (defmethod ig/init-key ::bundle
-  [_ {:keys [out-path with-aot?]}]
+  [_ {:keys [out-path with-aot? aliases]}]
   (println "Bundling the src and the libs")
   (bundle/bundle out-path
                  (if with-aot?
                    {:deps-map (assoc-in (edn/read-string (slurp "deps.edn"))
                                         [:aliases ::classes :extra-paths]
                                         ["target/classes"])
-                    :aliases  [::classes]})))
+                    :aliases  (conj aliases ::classes)}
+                   {:aliases aliases})))
 
 (defmethod ig/init-key ::bundle-run-script
   [_ {:keys [out-path main-namespace]}]
@@ -136,7 +140,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
   (clean/clean (str target-path)))
 
 
-(defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version]}]
+(defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version
+                                    aliases] :or {aliases []}}]
   (let [configuration (merge aot-config
                              (bundle-config true)
                              docker-config
@@ -145,7 +150,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
                               ::docker-registry docker-registry
                               ::lib-name        lib-name
                               ::version         version
-                              ::java-version    java-version})
+                              ::java-version    java-version
+                              ::aliases         aliases})
         {:keys [::target-path]} (ig/init configuration [::target-path])]
     (clean target-path)
     (ig/init configuration)))
