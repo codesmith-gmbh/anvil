@@ -5,7 +5,8 @@
             [badigeon.bundle :as bundle]
             [clojure.edn :as edn]
             [codesmith.anvil.nio :as nio]
-            [integrant.core :as ig]))
+            [integrant.core :as ig])
+  (:import (java.nio.file Files)))
 
 (defn assert-not-nil [value & {:keys [for]}]
   (when-not value
@@ -46,7 +47,7 @@
 (defmethod ig/init-key ::aot
   [_ {:keys [main-namespace aliases]}]
   (println (str "AOT compile namespace " main-namespace))
-  (compile/compile main-namespace (classpath/make-classpath {:aliases aliases}))
+  (compile/compile main-namespace {:classpath (classpath/make-classpath {:aliases aliases})})
   :aot-done)
 
 
@@ -140,7 +141,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
 
 (defn clean [target-path]
   (println "Clean target directory")
-  (clean/clean (str target-path)))
+  (clean/clean (str target-path))
+  (nio/ensure-directory target-path))
 
 (defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version
                                     aliases aot? target-path] :or {aliases [] aot? true}}]
