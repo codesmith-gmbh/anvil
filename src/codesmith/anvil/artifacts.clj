@@ -141,9 +141,9 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
 
 
 (defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version
-                                    aliases] :or {aliases []}}]
-  (let [configuration (merge aot-config
-                             (bundle-config true)
+                                    aliases aot?] :or {aliases [] aot? true}}]
+  (let [configuration (merge (if aot? aot-config {})
+                             (bundle-config aot?)
                              docker-config
                              {::main-namespace  main-namespace
                               ::target-path     nil
