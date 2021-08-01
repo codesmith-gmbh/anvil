@@ -1,6 +1,6 @@
-(ns codesmith-gmbh.anvil.nio-test
+(ns codesmith.anvil.nio-test
   (:require [clojure.test :refer :all]
-            [codesmith-gmbh.anvil.nio :as nio]))
+            [codesmith.anvil.nio :as nio]))
 
 (deftest path-correctness
   (is (= "parent" (str (nio/path "parent"))))

@@ -1,4 +1,4 @@
-(ns codesmith-gmbh.anvil.nio
+(ns codesmith.anvil.nio
   (:refer-clojure :exclude [resolve spit])
   (:require [clojure.java.io :as io])
   (:import (java.nio.file.attribute PosixFilePermissions FileAttribute)

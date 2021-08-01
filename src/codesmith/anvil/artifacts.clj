@@ -1,9 +1,9 @@
-(ns codesmith-gmbh.anvil.artifacts
+(ns codesmith.anvil.artifacts
   (:require [badigeon.clean :as clean]
             [badigeon.compile :as compile]
             [badigeon.bundle :as bundle]
             [clojure.edn :as edn]
-            [codesmith-gmbh.anvil.nio :as nio]
+            [codesmith.anvil.nio :as nio]
             [integrant.core :as ig]))
 
 (defn assert-not-nil [value & {:keys [for]}]
