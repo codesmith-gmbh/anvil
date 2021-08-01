@@ -110,9 +110,12 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
                              :version         (ig/ref ::version)}})
 
 (def java-docker-base-images
-  {:openjdk/jre8  "opendjk:8u265-jre-slim"
-   :openjdk/jre11 "openjdk:11.0.8-jre-slim"
-   :openjdk/jdk14 "opendjk:14.0.2-slim"})
+  {:openjdk/jre8  "opendjk:8u302-jre-slim"
+   :openjdk/jre11 "openjdk:11.0.12-jre-slim"
+   :openjdk/jdk14 "opendjk:14.0.2-slim"
+   :openjdk/jdk15 "opendjk:15.0.2-slim"
+   :openjdk/jdk16 "opendjk:16.0.2-slim"
+   })
 
 (defmethod ig/init-key ::java-docker-base-image
   [_ {:keys [java-version]}]
