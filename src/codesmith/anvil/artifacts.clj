@@ -107,6 +107,10 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
    ::docker-build-script    {:target-path     (ig/ref ::target-path)
                              :docker-registry (ig/ref ::docker-registry)
                              :lib-name        (ig/ref ::lib-name)
+                             :version         (ig/ref ::version)}
+   ::docker-push-script     {:target-path     (ig/ref ::target-path)
+                             :docker-registry (ig/ref ::docker-registry)
+                             :lib-name        (ig/ref ::lib-name)
                              :version         (ig/ref ::version)}})
 
 (def java-docker-base-images
@@ -135,22 +139,42 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
   [_ {:keys [target-path]}]
   (spit (nio/path target-path ".dockerignore") "classes"))
 
-(defmethod ig/init-key ::docker-build-script
-  [_ {:keys [target-path lib-name version docker-registry]}]
-  (let [script-file (nio/path target-path "docker-build.sh")
-        tag-base    (str (if docker-registry (str docker-registry "/") "") lib-name ":")
-        tag         (str tag-base version)
-        latest      (str tag-base "latest")]
+(defn tags [docker-registry lib-name version]
+  (let [tag-base (str (if docker-registry (str docker-registry "/") "") lib-name ":")
+        tag      (str tag-base version)
+        latest   (str tag-base "latest")]
+    {:version-tag tag
+     :latest-tag  latest}))
+
+(defn generate-docker-script [{:keys [target-path lib-name version docker-registry]} script-name body-fn]
+  (let [script-file (nio/path target-path script-name)]
     (spit script-file
-          (str "#!/bin/bash\n"
-               "DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"\n"
+          (str "#!/bin/sh\n"
+               "dir=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\n"
                "(
-  cd \"$DIR\" || exit
-  docker build -t " tag " .
-  docker tag " tag " " latest "
-)\n"))
+  cd \"$dir\" || exit\n"
+               (body-fn (tags docker-registry lib-name version))
+               "
+\n)\n"))
     (nio/make-executable script-file)))
 
+(defmethod ig/init-key ::docker-build-script
+  [_ config]
+  (generate-docker-script
+    config
+    "docker-build.sh"
+    (fn [{:keys [version-tag latest-tag]}]
+      (str "  docker build -t " version-tag " .
+  docker tag " version-tag " " latest-tag))))
+
+(defmethod ig/init-key ::docker-push-script
+  [_ config]
+  (generate-docker-script
+    config
+    "docker-push.sh"
+    (fn [{:keys [version-tag latest-tag]}]
+      (str "  docker push " version-tag "
+  docker push " latest-tag))))
 
 (defn clean [target-path]
   (println "Clean target directory")
