@@ -5,7 +5,8 @@
             [badigeon.bundle :as bundle]
             [clojure.edn :as edn]
             [codesmith.anvil.nio :as nio]
-            [integrant.core :as ig])
+            [integrant.core :as ig]
+            [clojure.java.io :as io])
   (:import (java.nio.file Files)))
 
 (defn assert-not-nil [value & {:keys [for]}]
@@ -58,19 +59,28 @@
     {::bundle-out-path   {:lib-name    (ig/ref ::lib-name)
                           :version     (ig/ref ::version)
                           :target-path (ig/ref ::target-path)}
-     ::bundle            (with-aot?-merge {:out-path (ig/ref ::bundle-out-path)
-                                           :aliases  (ig/ref ::aliases)})
+     ::version-file      {:version         (ig/ref ::version)
+                          :bundle-out-path (ig/ref ::bundle-out-path)}
+     ::bundle            (with-aot?-merge {:out-path     (ig/ref ::bundle-out-path)
+                                           :aliases      (ig/ref ::aliases)
+                                           :version-file (ig/ref ::version-file)})
      ::bundle-run-script (with-aot?-merge {:out-path       (ig/ref ::bundle-out-path)
                                            :main-namespace (ig/ref ::main-namespace)})}))
 
 (defmethod ig/init-key ::bundle-out-path
   [_ {:keys [target-path lib-name version]}]
-  (str
-    (nio/resolve
-      target-path
-      (nio/relativize
-        (nio/absolute-path (nio/path "target"))
-        (nio/path (bundle/make-out-path lib-name version))))))
+  (let [out-path (nio/resolve
+                   target-path
+                   (nio/relativize
+                     (nio/absolute-path (nio/path "target"))
+                     (nio/path (bundle/make-out-path lib-name version))))]
+    (nio/ensure-directory out-path)
+    (str out-path)))
+
+(defmethod ig/init-key ::version-file
+  [_ {:keys [version bundle-out-path]}]
+  (spit (io/file bundle-out-path "version.edn")
+        {:version version}))
 
 (defmethod ig/init-key ::bundle
   [_ {:keys [out-path with-aot? aliases]}]
