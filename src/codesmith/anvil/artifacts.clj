@@ -6,8 +6,7 @@
             [clojure.edn :as edn]
             [codesmith.anvil.nio :as nio]
             [integrant.core :as ig]
-            [clojure.java.io :as io])
-  (:import (java.nio.file Files)))
+            [clojure.java.io :as io]))
 
 (defn assert-not-nil [value & {:keys [for]}]
   (when-not value
@@ -114,7 +113,7 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
                              :target-path            (ig/ref ::target-path)
                              :bundle-out-path        (ig/ref ::bundle-out-path)}
    ::dockerignore-file      {:target-path (ig/ref ::target-path)}
-   ::docker-build-script    {:target-path (ig/ref ::target-path)
+   ::docker-build-script    {:target-path     (ig/ref ::target-path)
                              :docker-registry (ig/ref ::docker-registry)
                              :lib-name        (ig/ref ::lib-name)
                              :version         (ig/ref ::version)}
@@ -136,6 +135,18 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
   [_ {:keys [java-version]}]
   (get java-docker-base-images java-version))
 
+(defmulti default-java-opts identity)
+
+(defmethod default-java-opts
+  :default
+  [_]
+  "-XX:MaxRAMPercentage=85")
+
+(defmethod default-java-opts
+  :openjdk/jdk17
+  [_]
+  "-XX:MaxRAMPercentage=85 -XX:+UseZGC")
+
 (defmethod ig/init-key ::dockerfile
   [_ {:keys [target-path java-docker-base-image version bundle-out-path]}]
   (println "Creating the Dockerfile")
@@ -143,6 +154,7 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
         (str "FROM " java-docker-base-image "\n"
              "ENV VERSION=\"" version "\"\n"
              "ENV LOCATION=\":docker\"\n"
+             "ENV JAVA_OPTS=\"" (default-java-opts default-java-opts) "\"\n"
              "COPY " (nio/relativize target-path bundle-out-path) " /app/\n"
              "CMD [\"/app/bin/run.sh\"]\n")))
 
