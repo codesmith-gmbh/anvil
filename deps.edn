@@ -8,10 +8,4 @@
          :runner   {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.902"}}
                     :main-opts  ["-m" "kaocha.runner"]}
          :outdated {:extra-deps {antq/antq {:mvn/version "1.1.0"}}
-                    :main-opts  ["-m" "antq.core"]}
-         :jar      {:extra-deps {seancorfield/depstar {:mvn/version "2.0.216"}}
-                    :main-opts  ["-m" "hf.depstar.jar" "anvil.jar"]}
-         :install  {:extra-deps {deps-deploy/deps-deploy {:mvn/version "0.0.12"}}
-                    :main-opts  ["-m" "deps-deploy.deps-deploy" "install" "anvil.jar"]}
-         :deploy   {:extra-deps {deps-deploy/deps-deploy {:mvn/version "0.0.12"}}
-                    :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "anvil.jar"]}}}
+                    :main-opts  ["-m" "antq.core"]}}}
