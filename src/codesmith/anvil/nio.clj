@@ -1,6 +1,7 @@
 (ns codesmith.anvil.nio
   (:refer-clojure :exclude [resolve spit])
-  (:require [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str])
   (:import (java.nio.file.attribute PosixFilePermissions FileAttribute)
            (java.nio.file Files Path OpenOption StandardOpenOption)
            (java.io File FileInputStream FileOutputStream)))
@@ -50,3 +51,16 @@
 (defn relativize [base-f other-f]
   (.relativize (as-path base-f) (as-path other-f)))
 
+(defn replace-in-file [f match replacement]
+  (clojure.core/spit f
+        (str/replace (slurp f) match replacement)))
+
+(comment
+
+  (replace-in-file "README.md"
+                   #"(?m)^io.github.codesmith-gmbh/anvil \{:git/tag .*\}$"
+                   (str "io.github.codesmith-gmbh/anvil {:git/tag \""
+                        "tag" "\" :git/sha \""
+                        "(short-sha tag)" "\"}"))
+
+  )
