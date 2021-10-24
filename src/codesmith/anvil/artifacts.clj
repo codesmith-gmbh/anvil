@@ -3,10 +3,10 @@
             [badigeon.clean :as clean]
             [badigeon.compile :as compile]
             [badigeon.bundle :as bundle]
-            [clojure.edn :as edn]
             [codesmith.anvil.nio :as nio]
             [integrant.core :as ig]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.tools.build.api :as b]))
 
 (defn assert-not-nil [value & {:keys [for]}]
   (when-not value
@@ -45,6 +45,10 @@
   [_ aliases]
   (or aliases []))
 
+(defmethod ig/init-key ::basis-opts
+  [_ basis-opts]
+  basis-opts)
+
 (def aot-config {::aot {:main-namespace (ig/ref ::main-namespace)
                         :aliases        (ig/ref ::aliases)}})
 
@@ -66,7 +70,8 @@
                           :bundle-out-path (ig/ref ::bundle-out-path)}
      ::bundle            (with-aot?-merge {:out-path     (ig/ref ::bundle-out-path)
                                            :aliases      (ig/ref ::aliases)
-                                           :version-file (ig/ref ::version-file)})
+                                           :version-file (ig/ref ::version-file)
+                                           :basis-opts   (ig/ref ::basis-opts)})
      ::bundle-run-script (with-aot?-merge {:out-path       (ig/ref ::bundle-out-path)
                                            :main-namespace (ig/ref ::main-namespace)})}))
 
@@ -85,20 +90,13 @@
   (spit (io/file bundle-out-path "version.edn")
         {:version version}))
 
-(defn gitlab? []
-  (System/getenv "GITLAB_CI"))
-
 (defmethod ig/init-key ::bundle
-  [_ {:keys [out-path with-aot? aliases]}]
+  [_ {:keys [out-path with-aot? aliases basis-opts]}]
   (println "Bundling the src and the libs")
-  (let [deps (assoc-in (edn/read-string (slurp "deps.edn"))
+  (let [deps (b/create-basis basis-opts)
+        deps (assoc-in deps
                        [:aliases ::classes :extra-paths]
-                       ["target/classes"])
-        deps (if (gitlab?)
-               (assoc deps
-                 :mvn/local-repo (str (System/getenv "CI_PROJECT_DIR")
-                                      "/.m2/repository"))
-               deps)]
+                       ["target/classes"])]
     (bundle/bundle out-path
                    (if with-aot?
                      {:deps-map deps
@@ -216,7 +214,7 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
 
 (defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version
                                     docker-base-image
-                                    aliases aot? target-path] :or {aliases [] aot? true}}]
+                                    aliases basis-opts aot? target-path] :or {aliases [] aot? true}}]
   (let [configuration (merge (if aot? aot-config {})
                              (bundle-config aot?)
                              docker-config
@@ -227,7 +225,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
                               ::version           version
                               ::java-version      java-version
                               ::aliases           aliases
-                              ::docker-base-image docker-base-image})
+                              ::docker-base-image docker-base-image
+                              ::basis-opts        basis-opts})
         {:keys [::target-path]} (ig/init configuration [::target-path])]
     (clean target-path)
     (ig/init configuration)))
