@@ -85,16 +85,25 @@
   (spit (io/file bundle-out-path "version.edn")
         {:version version}))
 
+(defn gitlab? []
+  (System/getenv "GITLAB_CI"))
+
 (defmethod ig/init-key ::bundle
   [_ {:keys [out-path with-aot? aliases]}]
   (println "Bundling the src and the libs")
-  (bundle/bundle out-path
-                 (if with-aot?
-                   {:deps-map (assoc-in (edn/read-string (slurp "deps.edn"))
-                                        [:aliases ::classes :extra-paths]
-                                        ["target/classes"])
-                    :aliases  (conj aliases ::classes)}
-                   {:aliases aliases})))
+  (let [deps (assoc-in (edn/read-string (slurp "deps.edn"))
+                       [:aliases ::classes :extra-paths]
+                       ["target/classes"])
+        deps (if (gitlab?)
+               (assoc deps
+                 :mvn/local-repo (str (System/getenv "CI_PROJECT_DIR")
+                                      "/.m2/repository"))
+               deps)]
+    (bundle/bundle out-path
+                   (if with-aot?
+                     {:deps-map deps
+                      :aliases  (conj aliases ::classes)}
+                     {:aliases aliases}))))
 
 (defmethod ig/init-key ::bundle-run-script
   [_ {:keys [out-path main-namespace]}]
