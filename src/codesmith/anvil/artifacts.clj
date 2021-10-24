@@ -222,13 +222,3 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
         {:keys [::target-path]} (ig/init configuration [::target-path])]
     (clean target-path)
     (ig/init configuration)))
-
-(comment
-  (make-docker-artifact {:main-namespace    'codesmith.anvil.artifacts
-                         :lib-name          'anvic
-                         :aliases           []
-                         :version           "1.0.0"
-                         :java-version      :openjdk/jdk17
-                         :docker-base-image "other-base-image"
-                         :aot?              false})
-  )
