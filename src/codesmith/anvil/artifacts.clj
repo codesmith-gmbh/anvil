@@ -37,6 +37,10 @@
   [_ java-version]
   (assert-not-nil java-version :for ::java-version))
 
+(defmethod ig/init-key ::docker-base-image
+  [_ docker-base-image]
+  docker-base-image)
+
 (defmethod ig/init-key ::aliases
   [_ aliases]
   (or aliases []))
@@ -107,8 +111,10 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
     (nio/make-executable script-path)))
 
 (def docker-config
-  {::java-docker-base-image {:java-version (ig/ref ::java-version)}
+  {::java-docker-base-image {:java-version      (ig/ref ::java-version)
+                             :docker-base-image (ig/ref ::docker-base-image)}
    ::dockerfile             {:java-docker-base-image (ig/ref ::java-docker-base-image)
+                             :java-version           (ig/ref ::java-version)
                              :version                (ig/ref ::version)
                              :target-path            (ig/ref ::target-path)
                              :bundle-out-path        (ig/ref ::bundle-out-path)}
@@ -128,33 +134,34 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
    :openjdk/jdk14 "openjdk:14.0.2-slim"
    :openjdk/jdk15 "openjdk:15.0.2-slim"
    :openjdk/jdk16 "openjdk:16.0.2-slim"
-   :openjdk/jdk17 "openjdk:17-buster"
+   :openjdk/jdk17 "openjdk:17.0.1-slim-buster"
    })
 
 (defmethod ig/init-key ::java-docker-base-image
-  [_ {:keys [java-version]}]
-  (get java-docker-base-images java-version))
+  [_ {:keys [java-version docker-base-image]}]
+  (or docker-base-image
+      (get java-docker-base-images java-version)))
 
 (defmulti default-java-opts identity)
-
-(defmethod default-java-opts
-  :default
-  [_]
-  "-XX:MaxRAMPercentage=85")
 
 (defmethod default-java-opts
   :openjdk/jdk17
   [_]
   "-XX:MaxRAMPercentage=85 -XX:+UseZGC")
 
+(defmethod default-java-opts
+  :default
+  [_]
+  "-XX:MaxRAMPercentage=85")
+
 (defmethod ig/init-key ::dockerfile
-  [_ {:keys [target-path java-docker-base-image version bundle-out-path]}]
+  [_ {:keys [target-path java-version java-docker-base-image version bundle-out-path]}]
   (println "Creating the Dockerfile")
   (spit (nio/path target-path "Dockerfile")
         (str "FROM " java-docker-base-image "\n"
              "ENV VERSION=\"" version "\"\n"
              "ENV LOCATION=\":docker\"\n"
-             "ENV JAVA_OPTS=\"" (default-java-opts default-java-opts) "\"\n"
+             "ENV JAVA_OPTS=\"" (default-java-opts java-version) "\"\n"
              "COPY " (nio/relativize target-path bundle-out-path) " /app/\n"
              "CMD [\"/app/bin/run.sh\"]\n")))
 
@@ -199,26 +206,29 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
   (nio/ensure-directory target-path))
 
 (defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version
+                                    docker-base-image
                                     aliases aot? target-path] :or {aliases [] aot? true}}]
   (let [configuration (merge (if aot? aot-config {})
                              (bundle-config aot?)
                              docker-config
-                             {::main-namespace  main-namespace
-                              ::target-path     target-path
-                              ::docker-registry docker-registry
-                              ::lib-name        lib-name
-                              ::version         version
-                              ::java-version    java-version
-                              ::aliases         aliases})
+                             {::main-namespace    main-namespace
+                              ::target-path       target-path
+                              ::docker-registry   docker-registry
+                              ::lib-name          lib-name
+                              ::version           version
+                              ::java-version      java-version
+                              ::aliases           aliases
+                              ::docker-base-image docker-base-image})
         {:keys [::target-path]} (ig/init configuration [::target-path])]
     (clean target-path)
     (ig/init configuration)))
 
 (comment
-  (make-docker-artifact {:main-namespace 'codesmith.anvil.artifacts
-                         :lib-name       'anvic
-                         :aliases        []
-                         :version        "1.0.0"
-                         :java-version   :openjdk/jre11
-                         :aot?           false})
+  (make-docker-artifact {:main-namespace    'codesmith.anvil.artifacts
+                         :lib-name          'anvic
+                         :aliases           []
+                         :version           "1.0.0"
+                         :java-version      :openjdk/jdk17
+                         :docker-base-image "other-base-image"
+                         :aot?              false})
   )
