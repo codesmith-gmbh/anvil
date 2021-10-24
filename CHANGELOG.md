@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
+### Added
+- a function `sh!` to execute shell commands and redirect I/O
+
+### Modified
+- some git functions with side-effectes uses now `sh!`
 
 ## 0.1.27
 ### Added

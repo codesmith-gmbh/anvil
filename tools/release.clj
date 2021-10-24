@@ -1,7 +1,9 @@
 #!/usr/bin/env bb
 
-(require '[clojure.string :as str])
-(require '[clojure.java.shell :as js])
+(ns release
+  (:require [clojure.string :as str]
+            [clojure.java.shell :as js])
+  (:import (java.util List)))
 
 (defn version [commit-count]
   (str "0.1." commit-count))
@@ -13,6 +15,17 @@
       (throw (ex-info "shell error"
                       (assoc result
                         :args args))))))
+
+(defn sh! [& args]
+  "Execute the given shell command and redirect the ouput/error to the standard output error; returns nil."
+  (let [^Process process (.. (ProcessBuilder. ^List args)
+                             (inheritIO)
+                             (start))
+        exit             (.waitFor process)]
+    (when (not= exit 0)
+      (throw (ex-info "shell error"
+                      {:exit 0
+                       :args args})))))
 
 (defn git-clean? []
   (= (count (sh "git" "status" "-s")) 0))
@@ -37,14 +50,14 @@
 (defn tag! [tag message]
   (let [commits-count (git-commit-count)
         version       (version commits-count)]
-    (sh "git" "tag" "-am" (str "\"" message " on version: " version \") tag)))
+    (sh! "git" "tag" "-am" (str "\"" message " on version: " version \") tag)))
 
 (defn commit-all! [message]
-  (sh "git" "commit" "-am" message))
+  (sh! "git" "commit" "-am" message))
 
 (defn push-tags! []
-  (sh "git" "push")
-  (sh "git" "push" "--tags"))
+  (sh! "git" "push")
+  (sh! "git" "push" "--tags"))
 
 (defn replace-in-file [f match replacement]
   (spit f

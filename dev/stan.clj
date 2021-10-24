@@ -12,4 +12,6 @@
                              :aot?              false})
 
   (sh/git-branch)
+
+  (sh/sh! "git" "pulla")
   )
