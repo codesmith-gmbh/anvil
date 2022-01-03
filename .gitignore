@@ -3,9 +3,10 @@
 /checkouts
 *.jar
 *.class
-/.cpcache
+.cpcache
 /.lein-*
 /.nrepl-history
 /.nrepl-port
 /.idea
 /anvil.iml
+/nvd/target/
