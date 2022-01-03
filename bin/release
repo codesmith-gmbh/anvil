@@ -6,7 +6,7 @@
   (:import (java.util List)))
 
 (defn version [commit-count]
-  (str "0.1." commit-count))
+  (str "0.2." commit-count))
 
 (defn sh [& args]
   (let [{:keys [exit out] :as result} (apply js/sh args)]
@@ -64,6 +64,7 @@
         (str/replace (slurp f) match replacement)))
 
 (defn release! []
+  (sh! "bin/kaocha")
   (check-released-allowed)
   (let [version (version (git-commit-count))
         tag     (str "v" version)]
