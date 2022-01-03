@@ -1,12 +1,23 @@
-(ns codesmith.anvil.artifacts
+(ns ch.codesmith.anvil.artifacts
   (:require [badigeon.classpath :as classpath]
             [badigeon.clean :as clean]
             [badigeon.compile :as compile]
             [badigeon.bundle :as bundle]
-            [codesmith.anvil.nio :as nio]
             [integrant.core :as ig]
             [clojure.java.io :as io]
-            [clojure.tools.build.api :as b]))
+            [clojure.tools.build.api :as b]
+            [babashka.fs :as fs])
+  (:import (java.nio.file Path OpenOption Files StandardOpenOption)))
+
+(extend Path
+  io/IOFactory
+  (assoc io/default-streams-impl
+    :make-input-stream (fn [^Path x opts] (io/make-input-stream
+                                            (Files/newInputStream x (make-array OpenOption 0)) opts))
+    :make-output-stream (fn [^Path x opts] (io/make-output-stream
+                                             (Files/newOutputStream x (if (:append opts)
+                                                                        (into-array OpenOption [StandardOpenOption/APPEND])
+                                                                        (make-array OpenOption 0))) opts))))
 
 (defn assert-not-nil [value & {:keys [for]}]
   (when-not value
@@ -19,7 +30,7 @@
 
 (defmethod ig/init-key ::target-path
   [_ target-path-override]
-  (or target-path-override (nio/path "target")))
+  (or target-path-override (fs/path "target")))
 
 (defmethod ig/init-key ::docker-registry
   [_ docker-registry]
@@ -77,12 +88,12 @@
 
 (defmethod ig/init-key ::bundle-out-path
   [_ {:keys [target-path lib-name version]}]
-  (let [out-path (nio/resolve
+  (let [out-path (fs/path
                    target-path
-                   (nio/relativize
-                     (nio/absolute-path (nio/path "target"))
-                     (nio/path (bundle/make-out-path lib-name version))))]
-    (nio/ensure-directory out-path)
+                   (fs/relativize
+                     (fs/absolutize (fs/path "target"))
+                     (fs/path (bundle/make-out-path lib-name version))))]
+    (fs/create-dirs out-path)
     (str out-path)))
 
 (defmethod ig/init-key ::version-file
@@ -103,11 +114,14 @@
                       :aliases  (conj aliases ::classes)}
                      {:aliases aliases}))))
 
+(defn make-executable [f]
+  (fs/set-posix-file-permissions f "rwxr-xr-x"))
+
 (defmethod ig/init-key ::bundle-run-script
   [_ {:keys [out-path main-namespace]}]
-  (let [bin-dir-path (nio/resolve out-path "bin")
-        script-path  (nio/resolve bin-dir-path "run.sh")]
-    (nio/ensure-directory bin-dir-path)
+  (let [bin-dir-path (fs/path out-path "bin")
+        script-path  (fs/path bin-dir-path "run.sh")]
+    (fs/create-dirs bin-dir-path)
     (spit script-path
           (str
             "#!/bin/bash
@@ -115,7 +129,7 @@ DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
 java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
             main-namespace
             "\n"))
-    (nio/make-executable script-path)))
+    (make-executable script-path)))
 
 (def docker-config
   {::java-docker-base-image {:java-version      (ig/ref ::java-version)
@@ -164,24 +178,24 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
 (defmethod ig/init-key ::dockerfile
   [_ {:keys [target-path java-version java-docker-base-image version bundle-out-path]}]
   (println "Creating the Dockerfile")
-  (spit (nio/path target-path "Dockerfile")
+  (spit (fs/path target-path "Dockerfile")
         (str "FROM " java-docker-base-image "\n"
              "ENV VERSION=\"" version "\"\n"
              "ENV LOCATION=\":docker\"\n"
              "ENV JAVA_OPTS=\"" (default-java-opts java-version) "\"\n"
-             "COPY " (nio/relativize target-path bundle-out-path) " /app/\n"
+             "COPY " (fs/relativize target-path bundle-out-path) " /app/\n"
              "CMD [\"/app/bin/run.sh\"]\n")))
 
 (defmethod ig/init-key ::dockerignore-file
   [_ {:keys [target-path]}]
-  (spit (nio/path target-path ".dockerignore") "classes"))
+  (spit (fs/path target-path ".dockerignore") "classes"))
 
 (defn tag [docker-registry lib-name version]
   (let [tag-base (str (if docker-registry (str docker-registry "/") "") lib-name ":")]
     (str tag-base version)))
 
 (defn generate-docker-script [{:keys [target-path lib-name version docker-registry]} script-name body-fn]
-  (let [script-file (nio/path target-path script-name)]
+  (let [script-file (fs/path target-path script-name)]
     (spit script-file
           (str "#!/bin/sh\n"
                "dir=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\n"
@@ -189,7 +203,7 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
   cd \"$dir\" || exit\n"
                "  " (body-fn (tag docker-registry lib-name version))
                "\n)\n"))
-    (nio/make-executable script-file)))
+    (make-executable script-file)))
 
 (defmethod ig/init-key ::docker-build-script
   [_ config]
@@ -210,7 +224,7 @@ java ${JAVA_OPTS} -cp \"${DIR}/..:${DIR}/../lib/*\" "
 (defn clean [target-path]
   (println "Clean target directory")
   (clean/clean (str target-path))
-  (nio/ensure-directory target-path))
+  (fs/create-dirs target-path))
 
 (defn make-docker-artifact [{:keys [main-namespace docker-registry lib-name version java-version
                                     docker-base-image

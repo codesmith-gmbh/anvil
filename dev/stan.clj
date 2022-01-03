@@ -1,6 +1,6 @@
 (ns stan
-  (:require [codesmith.anvil.artifacts :as art]
-            [codesmith.anvil.shell :as sh]
+  (:require [ch.codesmith.anvil.artifacts :as art]
+
             [clojure.tools.build.api :as b]))
 
 (comment
@@ -12,8 +12,6 @@
                              :docker-base-image "other-base-image"
                              :basis-opts        {:user :standard}
                              :aot?              false})
-
-  (sh/git-branch)
 
   (keys
     (b/create-basis {:user :standard}))

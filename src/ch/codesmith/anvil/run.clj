@@ -1,4 +1,4 @@
-(ns codesmith.anvil.run
+(ns ch.codesmith.anvil.run
   (:require [clojure.string :as str]
             [clojure.tools.build.api :as b]
             [clojure.tools.deps.alpha :as t]))
