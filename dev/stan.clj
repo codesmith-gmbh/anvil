@@ -1,5 +1,5 @@
 (ns stan
-  (:require [ch.codesmith.anvil.artifacts :as art]
+  (:require [ch.codesmith.anvil.apps :as art]
 
             [clojure.tools.build.api :as b]))
 
