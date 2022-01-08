@@ -13,7 +13,7 @@
         class-dir (str (io/file target-dir "classes"))
         src-dirs  (into []
                         (keep (fn [[lib {:keys [path-key]}]]
-                                (and path-key (name lib))))
+                                (and path-key (str (io/file root (name lib))))))
                         (:classpath basis))
         jar-file  (str (io/file target-dir (str (name lib) "-" version ".jar")))]
     (when clean?
