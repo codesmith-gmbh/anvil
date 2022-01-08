@@ -50,6 +50,7 @@
         version        (if tag (str tag "-" sha) sha)
         jar-file       (libs/jar {:lib        lib
                                   :version    version
+                                  :with-pom?  false
                                   :root       root
                                   :target-dir target-dir
                                   :clean?     true})
@@ -80,16 +81,6 @@
   (let [all-libs (all-libs basis)]
     (doseq [[lib props] all-libs]
       (copy-jar lib props jar-dir target-dir))))
-
-(comment
-  (all-libs basis)
-
-  (def basis (b/create-basis {:project "deps.edn"}))
-
-
-  (copy-jars basis "target/jars" "target/libs")
-
-  )
 
 (defn make-executable [f]
   (fs/set-posix-file-permissions f "rwxr-xr-x"))
