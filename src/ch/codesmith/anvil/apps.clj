@@ -186,7 +186,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
                                 docker-base-image-override
                                 docker-registry]}]
   (let [root                  (or root ".")
-        basis                 (or basis (b/create-basis {:project (str (io/file root "deps.edn"))}))
+        root-deps             (str (io/file root "deps.edn"))
+        basis                 (or basis (b/create-basis {:project root-deps}))
         target-dir            (or target-dir "target")
         ; 1. create the jar file for the project
         jar-file              (libs/jar {:lib        lib
@@ -210,20 +211,20 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
                                :script-name "docker-push.sh"
                                :body        (docker-push-body lib-docker-tag)})
       (lib-dockerfile {:target-path            docker-lib-dir
-                       :java-docker-base-image docker-lib-base-image}))
-    ; 3. create the docker app folder
-    (let [docker-app-dir (io/file target-dir "docker-app")
-          app-dir        (io/file docker-app-dir "app")
-          app-tag        (str tag-base version)]
-      (b/copy-file {:src    jar-file
-                    :target (str (io/file app-dir "lib" (fs/file-name jar-file)))})
-      (generate-app-run-script {:target         app-dir
-                                :main-namespace main-namespace})
-      (generate-docker-script {:target-path docker-app-dir
-                               :script-name "docker-build.sh"
-                               :body        (str
-                                              "
-if docker image inspect " lib-docker-tag " >/dev/null; then
+                       :java-docker-base-image docker-lib-base-image})
+      ; 3. create the docker app folder
+      (let [docker-app-dir (io/file target-dir "docker-app")
+            app-dir        (io/file docker-app-dir "app")
+            app-tag        (str tag-base version)]
+        (b/copy-file {:src    jar-file
+                      :target (str (io/file app-dir "lib" (fs/file-name jar-file)))})
+        (generate-app-run-script {:target         app-dir
+                                  :main-namespace main-namespace})
+        (generate-docker-script {:target-path docker-app-dir
+                                 :script-name "docker-build.sh"
+                                 :body        (str
+                                                "
+  if docker image inspect " lib-docker-tag " >/dev/null; then
    echo \"The base image " lib-docker-tag "  exists\"
 else
    echo \"The base image " lib-docker-tag " does not exists locally; pulling\"
@@ -236,10 +237,15 @@ else
    fi
 fi
 "
-                                              (docker-build-body app-tag)
-                                              )})
-      (app-dockerfile {:target-path            docker-app-dir
-                       :java-version           java-version
-                       :docker-base-image-name lib-docker-tag
-                       :version                version
-                       :jar-file               jar-file}))))
+                                                (docker-build-body app-tag)
+                                                )})
+        (generate-docker-script {:target-path docker-app-dir
+                                 :script-name "docker-push.sh"
+                                 :body        (docker-push-body app-tag)})
+        (app-dockerfile {:target-path            docker-app-dir
+                         :java-version           java-version
+                         :docker-base-image-name lib-docker-tag
+                         :version                version
+                         :jar-file               jar-file})
+        {:app-docker-tag app-tag
+         :lib-docker-tag lib-docker-tag}))))
