@@ -5,7 +5,8 @@
             [babashka.fs :as fs]
             [buddy.core.hash :as hash]
             [buddy.core.codecs :as bc]
-            [com.rpl.specter :as sp])
+            [com.rpl.specter :as sp]
+            [clojure.string :as str])
   (:import (java.nio.file Path OpenOption Files StandardOpenOption)))
 
 (extend Path
@@ -17,6 +18,17 @@
                                              (Files/newOutputStream x (if (:append opts)
                                                                         (into-array OpenOption [StandardOpenOption/APPEND])
                                                                         (make-array OpenOption 0))) opts))))
+
+(defn nondir-full-name
+  "Creates a name separated by '--' instead of '/'; named stuff get separated"
+  [& args]
+  (-> (str/join "--" args)
+      (str/replace "/" "--")
+      (str/replace "\\" "--")
+      (str/replace ":" "--")))
+
+(defn full-jar-file-name [lib version]
+  (nondir-full-name lib (str version ".jar")))
 
 (defn compile-clj [basis class-dir]
   (b/compile-clj {:basis     basis
@@ -33,20 +45,25 @@
 
 (defmethod copy-jar
   :deps
-  [lib props jar-dir target-dir]
-  (let [target-dir     (io/file target-dir (libs/nondir-full-name lib))
-        jar-file       (libs/jar lib props target-dir)
-        copy-file-args {:src    (str jar-file)
-                        :target (str (io/file jar-dir (.getName jar-file)))}]
+  [lib {:keys [git/tag git/sha deps/root]} jar-dir target-dir]
+  (let [target-dir     (io/file target-dir (nondir-full-name lib))
+        version        (if tag (str tag "-" sha) sha)
+        jar-file       (libs/jar {:lib        lib
+                                  :version    version
+                                  :root       root
+                                  :target-dir target-dir
+                                  :clean?     true})
+        copy-file-args {:src    jar-file
+                        :target (str (io/file jar-dir (full-jar-file-name lib version)))}]
     (b/copy-file copy-file-args)))
 
 (defmethod copy-jar
   :mvn
   [lib props jar-dir target-dir]
-  (let [jar-file (io/file (libs/jar-file-name lib (:mvn/version props)))
+  (let [jar-file (full-jar-file-name lib (:mvn/version props))
         path     (sp/select-one! [:paths sp/ALL] props)]
     (b/copy-file {:src    path
-                  :target (str (io/file jar-dir (.getName jar-file)))})))
+                  :target (str (io/file jar-dir jar-file))})))
 
 (defn all-libs [{:keys [classpath libs]}]
   (let [used-libs (into #{}
@@ -68,6 +85,7 @@
   (all-libs basis)
 
   (def basis (b/create-basis {:project "deps.edn"}))
+
 
   (copy-jars basis "target/jars" "target/libs")
 
