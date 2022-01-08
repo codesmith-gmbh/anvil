@@ -3,8 +3,7 @@
             [ch.codesmith.anvil.libs :as libs]
             [clojure.tools.build.api :as b]
             [babashka.fs :as fs])
-  (:import (java.nio.file Files)
-           (java.util.zip ZipFile ZipEntry)))
+  (:import (java.util.zip ZipFile ZipEntry)))
 
 (def lib 'ch.codesmith/anvil)
 (def version (str "0.2." (b/git-count-revs {})))

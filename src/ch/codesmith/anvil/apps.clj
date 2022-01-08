@@ -22,7 +22,11 @@
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
   [& args]
-  (-> (str/join "--" args)
+  (-> (str/join "--" (map (fn [arg]
+                            (if (keyword? arg)
+                              (subs (str arg) 1)
+                              arg))
+                          args))
       (str/replace "/" "--")
       (str/replace "\\" "--")
       (str/replace ":" "--")))
