@@ -19,7 +19,7 @@
   (when-not (git-clean?)
     (throw (ex-info "Git is not clean" {})))
   (when-not (git-release-branch? release-branch-name)
-    (throw (ex-info "Git is not on the main branch" {:release-branch-name release-branch-name}))))
+    (throw (ex-info (str "Git is not on the release branch: " release-branch-name) {:release-branch-name release-branch-name}))))
 
 (defn git-tag-version! [tag version message]
   (sh/sh! "git" "tag" "-am" (str "\"" message " on version: " version \") tag))
