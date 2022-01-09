@@ -36,7 +36,7 @@
   (sh/sh! "docker" "rm" "-f" "registry"))
 
 (defn docker-rmi! [tag]
-  (sh/sh! "docker" "rmi" tag))
+  (sh/sh! "docker" "rmi" "-f" tag))
 
 (defn registry-images []
   (str/split-lines

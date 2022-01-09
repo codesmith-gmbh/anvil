@@ -215,7 +215,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
       ; 3. create the docker app folder
       (let [docker-app-dir (io/file target-dir "docker-app")
             app-dir        (io/file docker-app-dir "app")
-            app-tag        (str tag-base version)]
+            app-tag        (str tag-base version)
+            latest-tag     (str tag-base "latest")]
         (b/copy-file {:src    jar-file
                       :target (str (io/file app-dir "lib" (fs/file-name jar-file)))})
         (generate-app-run-script {:target         app-dir
@@ -241,7 +242,11 @@ fi
                                                 )})
         (generate-docker-script {:target-path docker-app-dir
                                  :script-name "docker-push.sh"
-                                 :body        (docker-push-body app-tag)})
+                                 :body
+                                 (str/join "\n"
+                                           [(docker-push-body app-tag)
+                                            (str "docker tag " app-tag " " latest-tag)
+                                            (docker-push-body latest-tag)])})
         (app-dockerfile {:target-path            docker-app-dir
                          :java-version           java-version
                          :docker-base-image-name lib-docker-tag
