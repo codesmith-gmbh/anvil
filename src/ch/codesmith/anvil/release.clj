@@ -1,6 +1,7 @@
 (ns ch.codesmith.anvil.release
   (:require [ch.codesmith.anvil.shell :as sh]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            ch.codesmith.anvil.io)
   (:import (java.util.regex Pattern)))
 
 (defn git-clean? []

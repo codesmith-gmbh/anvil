@@ -6,18 +6,8 @@
             [buddy.core.hash :as hash]
             [buddy.core.codecs :as bc]
             [com.rpl.specter :as sp]
-            [clojure.string :as str])
-  (:import (java.nio.file Path OpenOption Files StandardOpenOption)))
-
-(extend Path
-  io/IOFactory
-  (assoc io/default-streams-impl
-    :make-input-stream (fn [^Path x opts] (io/make-input-stream
-                                            (Files/newInputStream x (make-array OpenOption 0)) opts))
-    :make-output-stream (fn [^Path x opts] (io/make-output-stream
-                                             (Files/newOutputStream x (if (:append opts)
-                                                                        (into-array OpenOption [StandardOpenOption/APPEND])
-                                                                        (make-array OpenOption 0))) opts))))
+            [clojure.string :as str]
+            ch.codesmith.anvil.io))
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"

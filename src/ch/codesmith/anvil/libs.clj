@@ -2,7 +2,9 @@
   (:require [clojure.tools.build.api :as b]
             [clojure.java.io :as io]
             [deps-deploy.deps-deploy :as deploy]
-            [babashka.fs :as fs]))
+            [babashka.fs :as fs]
+            ch.codesmith.anvil.io
+            [ch.codesmith.anvil.shell :as sh]))
 
 (defn jar ^String [{:keys [lib
                            version
@@ -31,21 +33,21 @@
             :jar-file  jar-file})
     jar-file))
 
-(defn deploy [{:keys [jar-file pom-file classes-dir lib
+(defn deploy [{:keys [jar-file pom-file target-dir classes-dir lib
                       installer sign-releases?]
-               :or   {classes-dir    "target/classes"
+               :or   {target-dir     "target"
+                      classes-dir    "target/classes"
                       installer      :remote
                       sign-releases? true}}]
-  (let [pom-file (or pom-file
-                     (fs/path classes-dir
-                              "META-INF"
-                              "maven"
-                              (namespace lib)
-                              (name lib)
-                              "pom.xml"))]
-    (when-not (fs/exists? pom-file)
-      (throw (ex-info (str "Pom file " pom-file " does not exists") {:pom-file pom-file})))
+  (let [pom-file (str (or pom-file
+                          (fs/path classes-dir
+                                   "META-INF"
+                                   "maven"
+                                   (namespace lib)
+                                   (name lib)
+                                   "pom.xml")))]
     (deploy/deploy {:artifact       jar-file
                     :installer      installer
                     :pom-file       pom-file
-                    :sign-releases? sign-releases?})))
+                    :sign-releases? sign-releases?
+                    :target-dir     target-dir})))
