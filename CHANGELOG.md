@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- Restarted with own utilities tools.build
+- Docker image with base image with dependencies
+- aot missing.
+
 ## 0.1.35
 ### Added
 - Support for build tools basis options
