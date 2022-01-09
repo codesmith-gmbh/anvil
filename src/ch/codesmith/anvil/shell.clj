@@ -1,5 +1,6 @@
 (ns ch.codesmith.anvil.shell
-  (:require [clojure.java.shell :as js])
+  (:require [clojure.java.shell :as js]
+            [clojure.string :as str])
   (:import (java.util List)))
 
 
