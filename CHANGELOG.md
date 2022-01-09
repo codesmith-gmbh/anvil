@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.2.60
+
 ## 0.2.55
 
 ### Changed
