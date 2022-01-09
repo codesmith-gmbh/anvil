@@ -28,23 +28,37 @@ Hello
     (rel/update-changelog-file change-log-test-file "1.0.0")
     (is (= changelog-after (slurp change-log-test-file)))))
 
-(def readme-before
-  "# README
+(defn test-update-readme [{:keys [before after deps/manifest]}]
+  (let [readme-test-file (io/file test-dir "README.md")]
+    (io/make-parents readme-test-file)
+    (spit readme-test-file before)
+    (rel/update-readme {:file          readme-test-file
+                        :deps-coords   'io.github.codesmith-gmbh/anvil
+                        :tag           "v0.1.35"
+                        :version       "0.1.35"
+                        :deps/manifest manifest})
+    (is (= after (slurp readme-test-file)))))
+
+(deftest update-readme-correctness
+  (test-update-readme {:before        "# README
 ```
 io.github.codesmith-gmbh/anvil {:git/tag \"????\" :git/sha \"???\"}
 ```
-")
-
-(def readme-after
-  "# README
+"
+                       :after         "# README
 ```
 io.github.codesmith-gmbh/anvil {:git/tag \"v0.1.35\" :git/sha \"de11727\"}
 ```
-")
-
-(deftest update-readme-correctness
-  (let [readme-test-file (io/file test-dir "README.md")]
-    (io/make-parents readme-test-file)
-    (spit readme-test-file readme-before)
-    (rel/update-readme readme-test-file 'io.github.codesmith-gmbh/anvil "v0.1.35")
-    (is (= readme-after (slurp readme-test-file)))))
+"
+                       :deps/manifest :deps})
+  (test-update-readme {:before        "# README
+```
+io.github.codesmith-gmbh/anvil {:mvn/version \"????\"}
+```
+"
+                       :after         "# README
+```
+io.github.codesmith-gmbh/anvil {:mvn/version \"0.1.35\"}
+```
+"
+                       :deps/manifest :mvn}))

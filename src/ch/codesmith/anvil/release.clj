@@ -40,7 +40,9 @@
                    #"(?m)^## Unreleased(.*)$"
                    (str "## Unreleased\n\n## " version)))
 
-(defn update-readme [file deps-coords tag]
+(defmulti update-readme (fn [{:keys [:deps/manifest]}] manifest))
+
+(defmethod update-readme :deps [{:keys [file deps-coords tag]}]
   (replace-in-file file
                    (Pattern/compile
                      (str
@@ -49,12 +51,23 @@
                         tag "\" :git/sha \""
                         (short-sha tag) "\"}")))
 
-(defn git-release! [{:keys [deps-coords version release-branch-name]}]
+(defmethod update-readme :mvn [{:keys [file deps-coords version]}]
+  (replace-in-file file
+                   (Pattern/compile
+                     (str
+                       "(?m)^" deps-coords " \\{:mvn/version .*\\}$"))
+                   (str deps-coords " {:mvn/version \"" version "\"}")))
+
+(defn git-release! [{:keys [deps-coords version release-branch-name deps/manifest]}]
   (check-released-allowed release-branch-name)
   (let [tag (str "v" version)]
     (update-changelog-file "CHANGELOG.md" version)
     (git-commit-all! (str "CHANGELOG.md release " version))
     (git-tag-version! tag version (str "Release " deps-coords))
-    (update-readme "README.md" deps-coords tag)
+    (update-readme {:file          "README.md"
+                    :deps-coords   deps-coords
+                    :tag           tag
+                    :version       version
+                    :deps/manifest (or manifest :deps)})
     (git-commit-all! "Update for release")
     (git-push-all!)))
