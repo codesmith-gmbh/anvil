@@ -54,7 +54,7 @@
   (let [tag (str "v" version)]
     (update-changelog-file "CHANGELOG.md" version)
     (git-commit-all! (str "CHANGELOG.md release " version))
-    (git-tag-version! tag version "Release Anvil")
+    (git-tag-version! tag version (str "Release " deps-coords))
     (update-readme "README.md" deps-coords tag)
     (git-commit-all! "Update for release")
     (git-push-all!)))

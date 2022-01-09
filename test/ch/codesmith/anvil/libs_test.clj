@@ -2,7 +2,9 @@
   (:require [clojure.test :refer :all]
             [ch.codesmith.anvil.libs :as libs]
             [clojure.tools.build.api :as b]
-            [babashka.fs :as fs])
+            [babashka.fs :as fs]
+            [ch.codesmith.anvil.helloworld :as hw]
+            [clojure.java.io :as io])
   (:import (java.util.zip ZipFile ZipEntry)))
 
 (def lib 'ch.codesmith/anvil)
@@ -41,3 +43,22 @@
 (deftest jar-correctness
   (test-jar true)
   (test-jar false))
+
+(deftest deploy-local-correctness
+  (let [jar-file    (libs/jar (merge hw/base-properties
+                                     {:with-pom? true
+                                      :clean?    true}))
+        m2-repo-dir (io/file
+                      (System/getProperty "user.home")
+                      ".m2"
+                      "repository"
+                      "ch"
+                      "codesmith-test"
+                      "hello")]
+    (b/delete {:path (str m2-repo-dir)})
+    (libs/deploy {:jar-file       jar-file
+                  :target-dir     hw/target-dir
+                  :installer      :local
+                  :sign-releases? false
+                  :lib            hw/lib})
+    (is (fs/directory? m2-repo-dir))))

@@ -1,6 +1,8 @@
 (ns ch.codesmith.anvil.libs
   (:require [clojure.tools.build.api :as b]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [deps-deploy.deps-deploy :as deploy]
+            [babashka.fs :as fs]))
 
 (defn jar ^String [{:keys [lib
                            version
@@ -29,3 +31,21 @@
             :jar-file  jar-file})
     jar-file))
 
+(defn deploy [{:keys [jar-file pom-file classes-dir lib
+                      installer sign-releases?]
+               :or   {classes-dir    "target/classes"
+                      installer      :remote
+                      sign-releases? true}}]
+  (let [pom-file (or pom-file
+                     (fs/path classes-dir
+                              "META-INF"
+                              "maven"
+                              (namespace lib)
+                              (name lib)
+                              "pom.xml"))]
+    (when-not (fs/exists? pom-file)
+      (throw (ex-info (str "Pom file " pom-file " does not exists") {:pom-file pom-file})))
+    (deploy/deploy {:artifact       jar-file
+                    :installer      installer
+                    :pom-file       pom-file
+                    :sign-releases? sign-releases?})))

@@ -3,7 +3,8 @@
             [ch.codesmith.anvil.apps :as apps]
             [ch.codesmith.anvil.shell :as sh]
             [clojure.tools.build.api :as b]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [ch.codesmith.anvil.helloworld :as hw]))
 
 (deftest nondir-full-name-correctness
   (is (= "a" (apps/nondir-full-name "a")))
@@ -48,16 +49,12 @@
 
 (deftest hello-world-correctness
   (let [docker-registry "localhost:5001"
-        lib             'hello
         {:keys [app-docker-tag
                 lib-docker-tag]} (apps/docker-generator
-                                   {:lib             lib
-                                    :version         version
-                                    :root            "test/helloworld"
-                                    :java-version    :openjdk/jdk17
-                                    :target-dir      "target"
-                                    :main-namespace  "hello"
-                                    :docker-registry docker-registry})
+                                   (merge hw/base-properties
+                                          {:java-version    :openjdk/jdk17
+                                           :main-namespace  "hello"
+                                           :docker-registry docker-registry}))
         port            5001]
     (try
       ; 1. cleanup
