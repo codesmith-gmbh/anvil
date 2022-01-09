@@ -234,7 +234,6 @@ else
    else
      echo \"The base image " lib-docker-tag " does not exists remotely; building and pushing\"
      ../docker-lib/docker-build.sh
-     ../docker-lib/docker-push.sh
    fi
 fi
 "
@@ -244,7 +243,8 @@ fi
                                  :script-name "docker-push.sh"
                                  :body
                                  (str/join "\n"
-                                           [(docker-push-body app-tag)
+                                           ["../docker-lib/docker-push.sh"
+                                            (docker-push-body app-tag)
                                             (str "docker tag " app-tag " " latest-tag)
                                             (docker-push-body latest-tag)])})
         (app-dockerfile {:target-path            docker-app-dir
