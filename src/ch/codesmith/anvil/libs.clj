@@ -37,14 +37,14 @@
             :jar-file  jar-file})
     jar-file))
 
-(defn deploy [{:keys [jar-file pom-file target-dir classes-dir lib
+(defn deploy [{:keys [jar-file pom-file target-dir class-dir lib
                       installer sign-releases?]
                :or   {target-dir     "target"
-                      classes-dir    "target/classes"
+                      class-dir      "target/classes"
                       installer      :remote
                       sign-releases? true}}]
   (let [pom-file (str (or pom-file
-                          (fs/path classes-dir
+                          (fs/path class-dir
                                    "META-INF"
                                    "maven"
                                    (namespace lib)

@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file. This change
 
 - Support for description data (inspired by Lambdaisland tooling)
 
+### Changed
+
+- consistent `:class-dir` naming (instead of mixing `:class-dir` and `:classes-dir`)
+
 ## 0.2.60
 
 ## 0.2.55
