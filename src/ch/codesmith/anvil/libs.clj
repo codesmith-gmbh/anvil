@@ -3,8 +3,10 @@
             [clojure.java.io :as io]
             [deps-deploy.deps-deploy :as deploy]
             [babashka.fs :as fs]
-            ch.codesmith.anvil.io
-            [ch.codesmith.anvil.shell :as sh]))
+            [ch.codesmith.anvil.pom :as pom]
+            ch.codesmith.anvil.io))
+
+
 
 (defn jar ^String [{:keys [lib
                            version
@@ -12,6 +14,7 @@
                            with-pom?
                            root
                            target-dir
+                           description-data
                            clean?]}]
   (let [basis     (or basis (b/create-basis {:project (str (io/file root "deps.edn"))}))
         class-dir (str (io/file target-dir "classes"))
@@ -23,24 +26,25 @@
     (when clean?
       (b/delete {:path (str target-dir)}))
     (when with-pom?
-      (b/write-pom {:class-dir class-dir
-                    :lib       lib
-                    :version   version
-                    :basis     basis}))
+      (pom/write-pom {:class-dir        class-dir
+                      :lib              lib
+                      :version          version
+                      :basis            basis
+                      :description-data description-data}))
     (b/copy-dir {:src-dirs   src-dirs
                  :target-dir class-dir})
     (b/jar {:class-dir class-dir
             :jar-file  jar-file})
     jar-file))
 
-(defn deploy [{:keys [jar-file pom-file target-dir classes-dir lib
+(defn deploy [{:keys [jar-file pom-file target-dir class-dir lib
                       installer sign-releases?]
                :or   {target-dir     "target"
-                      classes-dir    "target/classes"
+                      class-dir      "target/classes"
                       installer      :remote
                       sign-releases? true}}]
   (let [pom-file (str (or pom-file
-                          (fs/path classes-dir
+                          (fs/path class-dir
                                    "META-INF"
                                    "maven"
                                    (namespace lib)
