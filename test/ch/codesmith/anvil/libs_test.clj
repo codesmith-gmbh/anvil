@@ -15,13 +15,15 @@
   (let [basis (b/create-basis {:project "deps.edn"
                                :aliases [:test-resources]
                                })]
-    (libs/jar {:lib        lib
-               :version    version
-               :with-pom?  with-pom?
-               :root       "."
-               :basis      basis
-               :target-dir target-dir
-               :clean?     true})
+    (libs/jar {:lib              lib
+               :version          version
+               :with-pom?        with-pom?
+               :root             "."
+               :basis            basis
+               :target-dir       target-dir
+               :description-data {:authors [{:name "Stanislas Nanchen"}]
+                                  :url     "https://codesmith.ch"}
+               :clean?           true})
     (let [classes-dir (fs/path target-dir "classes")
           jar-file    (fs/path target-dir (str (name lib) "-" version ".jar"))]
       (is (fs/directory? (fs/path classes-dir "ch")))
@@ -41,8 +43,8 @@
                 entry)))))))
 
 (deftest jar-correctness
-  (test-jar true)
-  (test-jar false))
+  (test-jar false)
+  (test-jar true))
 
 (deftest deploy-local-correctness
   (let [jar-file    (libs/jar (merge hw/base-properties

@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Added
+
+- Support for description data (inspired by Lambdaisland tooling)
+
 ## 0.2.60
 
 ## 0.2.55

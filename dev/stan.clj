@@ -2,9 +2,12 @@
   (:require [ch.codesmith.anvil.apps :as apps]
 
             [clojure.tools.build.api :as b]
-            [ch.codesmith.anvil.libs :as libs]))
+            [ch.codesmith.anvil.libs :as libs]
+            [clojure.data.xml :as xml]
+            [clojure.java.io :as io]))
 
 (comment
+
   (apps/make-docker-artifact {:main-namespace    'codesmith.anvil.artifacts
                               :lib-name          'anvic
                               :aliases           []
