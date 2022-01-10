@@ -113,7 +113,7 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
   [_]
   "-XX:MaxRAMPercentage=85")
 
-(defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version jar-file]}]
+(defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version]}]
   (println "Creating the App Dockerfile")
   (spit (fs/path target-path "Dockerfile")
         (str "FROM " docker-base-image-name "\n"
