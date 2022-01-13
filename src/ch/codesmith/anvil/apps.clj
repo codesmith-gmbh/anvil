@@ -269,6 +269,8 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
             latest-tag     (str tag-base "latest")]
         (b/copy-file {:src    jar-file
                       :target (str (io/file app-dir "lib" (fs/file-name jar-file)))})
+        (libs/spit-version-file {:version version
+                                 :dir     app-dir})
         (generate-app-run-script {:target         app-dir
                                   :main-namespace main-namespace})
         (generate-docker-script {:target-path docker-app-dir
