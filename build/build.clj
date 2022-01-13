@@ -4,7 +4,7 @@
             [clojure.tools.build.api :as b]))
 
 (def lib 'io.github.codesmith-gmbh/anvil)
-(def version (str "0.2." (b/git-count-revs {})))
+(def version (str "0.3." (b/git-count-revs {})))
 
 (defn run-tests []
   (sh/sh! "./bin/kaocha"))

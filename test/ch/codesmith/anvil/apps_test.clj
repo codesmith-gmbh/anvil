@@ -21,7 +21,6 @@
   (apps/docker-generator {:lib            lib
                           :version        version
                           :root           "."
-                          :java-version   :openjdk/jdk17
                           :target-dir     "target"
                           :main-namespace "test"})
   (is true))
@@ -52,7 +51,9 @@
         {:keys [app-docker-tag
                 lib-docker-tag]} (apps/docker-generator
                                    (merge hw/base-properties
-                                          {:java-version    :openjdk/jdk17
+                                          {:java-runtime    {:version         :java17
+                                                             :type            :jre
+                                                             :modules-profile :java.base}
                                            :main-namespace  "hello"
                                            :docker-registry docker-registry}))
         port            5001]
