@@ -24,16 +24,6 @@
 (defn full-jar-file-name [lib version]
   (nondir-full-name lib (str version ".jar")))
 
-(defn compile-clj [basis class-dir]
-  (b/compile-clj {:basis     basis
-                  :class-dir class-dir
-                  :src-dirs  (into (:paths basis)
-                                   (-> basis :resolve-args :extra-paths))}))
-
-(defn spit-version-file [version app-out-path]
-  (spit (io/file app-out-path "version.edn")
-        {:version version}))
-
 (defmulti copy-jar (fn [lib props jar-dir target-dir]
                      (:deps/manifest props)))
 
@@ -87,7 +77,7 @@
           (str
             "#!/bin/bash
 DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
-java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
+java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
             main-namespace
             "\n"))
     (make-executable script-path)))
@@ -240,7 +230,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
                                 target-dir
                                 main-namespace
                                 java-runtime
-                                docker-registry]
+                                docker-registry
+                                aot]
                          :or   {java-runtime {:version         :java17
                                               :type            :jre
                                               :modules-profile :anvil}}}]
@@ -255,7 +246,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
                                   :root       root
                                   :basis      basis
                                   :target-dir target-dir
-                                  :clean?     true})
+                                  :clean?     true
+                                  :aot        aot})
         tag-base       (tag-base docker-registry lib)
         java-runtime   (resolve-java-runtime java-runtime)
         lib-docker-tag (lib-docker-tag tag-base basis java-runtime)]

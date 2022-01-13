@@ -6,7 +6,9 @@
             [ch.codesmith.anvil.pom :as pom]
             ch.codesmith.anvil.io))
 
-
+(defn spit-version-file [{:keys [version dir]}]
+  (spit (io/file dir "version.edn")
+        {:version version}))
 
 (defn jar ^String [{:keys [lib
                            version
@@ -15,7 +17,8 @@
                            root
                            target-dir
                            description-data
-                           clean?]}]
+                           clean?
+                           aot]}]
   (let [basis     (or basis (b/create-basis {:project (str (io/file root "deps.edn"))}))
         class-dir (str (io/file target-dir "classes"))
         src-dirs  (into []
@@ -31,8 +34,18 @@
                       :version          version
                       :basis            basis
                       :description-data description-data}))
-    (b/copy-dir {:src-dirs   src-dirs
-                 :target-dir class-dir})
+    (if aot
+      (binding [b/*project-root* (str (fs/absolutize root))]
+        (b/compile-clj (merge {:basis     basis
+                               :class-dir (str (fs/absolutize class-dir))
+                               :src-dirs  (into []
+                                                (map (comp str fs/absolutize))
+                                                src-dirs)}
+                              aot)))
+      (b/copy-dir {:src-dirs   src-dirs
+                   :target-dir class-dir}))
+    (spit-version-file {:version version
+                        :dir     class-dir})
     (b/jar {:class-dir class-dir
             :jar-file  jar-file})
     jar-file))

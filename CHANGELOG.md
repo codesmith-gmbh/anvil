@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Added
+
+- aot support.
+
 ### Changed
 
 - BREAKING CHANGE: the docker creation has significantly changed to support the following features:
