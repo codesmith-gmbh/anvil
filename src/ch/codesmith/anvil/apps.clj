@@ -24,16 +24,6 @@
 (defn full-jar-file-name [lib version]
   (nondir-full-name lib (str version ".jar")))
 
-(defn compile-clj [basis class-dir]
-  (b/compile-clj {:basis     basis
-                  :class-dir class-dir
-                  :src-dirs  (into (:paths basis)
-                                   (-> basis :resolve-args :extra-paths))}))
-
-(defn spit-version-file [version app-out-path]
-  (spit (io/file app-out-path "version.edn")
-        {:version version}))
-
 (defmulti copy-jar (fn [lib props jar-dir target-dir]
                      (:deps/manifest props)))
 
@@ -87,24 +77,76 @@
           (str
             "#!/bin/bash
 DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
-java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
+java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
             main-namespace
             "\n"))
     (make-executable script-path)))
 
-(def java-docker-base-images
-  {:openjdk/jre8  "openjdk:8u302-jre-slim"
-   :openjdk/jre11 "openjdk:11.0.12-jre-slim"
-   :openjdk/jdk14 "openjdk:14.0.2-slim"
-   :openjdk/jdk15 "openjdk:15.0.2-slim"
-   :openjdk/jdk16 "openjdk:16.0.2-slim"
-   :openjdk/jdk17 "openjdk:17.0.1-slim-buster"})
 
+(def java-jdk-docker-base-images
+  {:java8  "openjdk:8u302-slim"
+   :java11 "openjdk:11.0.13-jdk-slim-buster"
+   :java14 "openjdk:14.0.2-jdk-slim-buster"
+   :java15 "openjdk:15.0.2-jdk-slim-buster"
+   :java16 "openjdk:16.0.2-jdk-slim-buster"
+   :java17 "openjdk:17.0.1-jdk-slim-buster"})
+
+(def java-jre-docker-base-images
+  {:java8  "openjdk:8u312-jre-slim-buster"
+   :java11 "openjdk:11.0.13-jre-slim-buster"})
+
+(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220112T215005Z")
+
+(defmulti resolve-modules identity)
+
+(defmethod resolve-modules :anvil [_]
+  #{"java.base"
+    "java.datatransfer"
+    "java.instrument"
+    "java.logging"
+    "java.management"
+    "java.management.rmi"
+    "java.naming"
+    "java.net.http"
+    "java.prefs"
+    "java.rmi"
+    "java.security.jgss"
+    "java.security.sasl"
+    "java.sql"
+    "java.sql.rowset"
+    "java.transaction.xa"
+    "java.xml"
+    "java.xml.crypto"})
+
+(defmethod resolve-modules :java.se [_]
+  #{"java.se"})
+
+(defmethod resolve-modules :java.base [_]
+  #{"java.base"})
+
+(defn resolve-java-runtime [{:keys [version type modules-profile extra-modules docker-base-image docker-jdk-base-image docker-runtime-base-image java-opts] :as runtime}]
+  (assoc
+    (cond
+      docker-base-image {:docker-image-type :simple-image
+                         :docker-base-image docker-base-image}
+      (= type :jdk) {:docker-image-type :simple-image
+                     :docker-base-image (version java-jdk-docker-base-images)}
+      (= type :jre) (if-let [docker-base-image (version java-jre-docker-base-images)]
+                      {:docker-image-type :simple-image
+                       :docker-base-image docker-base-image}
+                      {:docker-image-type         :jlink-image
+                       :docker-jdk-base-image     (or docker-jdk-base-image (version java-jdk-docker-base-images))
+                       :docker-runtime-base-image (or docker-runtime-base-image default-runtime-base-image)
+                       :modules                   (into (resolve-modules modules-profile)
+                                                        extra-modules)})
+      :else (throw (ex-info "cannot resolve java runtime" {:java-runtime runtime})))
+    :version version
+    :java-opts java-opts))
 
 (defmulti default-java-opts identity)
 
 (defmethod default-java-opts
-  :openjdk/jdk17
+  :java17
   [_]
   "-XX:MaxRAMPercentage=85 -XX:+UseZGC")
 
@@ -113,21 +155,36 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
   [_]
   "-XX:MaxRAMPercentage=85")
 
-(defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version jar-file]}]
+(defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version java-opts]}]
   (println "Creating the App Dockerfile")
   (spit (fs/path target-path "Dockerfile")
         (str "FROM " docker-base-image-name "\n"
              "ENV VERSION=\"" version "\"\n"
              "ENV LOCATION=\":docker\"\n"
-             "ENV JAVA_OPTS=\"" (default-java-opts java-version) "\"\n"
+             "ENV JAVA_OPTS=\"" (or java-opts (default-java-opts java-version)) "\"\n"
              "COPY /app/ /app/\n"
              "CMD [\"/app/bin/run.sh\"]\n")))
 
-(defn lib-dockerfile [{:keys [target-path java-docker-base-image]}]
+(defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
+  (str "FROM " docker-base-image "\n"
+       "COPY /lib/ /lib/\n"))
+
+(defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
+                                      docker-runtime-base-image
+                                      modules]}]
+  (str "FROM " docker-jdk-base-image "\n"
+       "RUN jlink --add-modules " (str/join "," modules) " --output /tmp/jre\n"
+       "FROM " docker-runtime-base-image "\n"
+       "COPY --from=0 /tmp/jre /jre\n"
+       "ENV PATH=/jre/bin:$PATH\n"
+       "COPY /lib/ /lib/\n"))
+
+(defn lib-dockerfile [{:keys [target-path java-runtime]}]
   (println "Creating the Lib Dockerfile")
   (spit (fs/path target-path "Dockerfile")
-        (str "FROM " java-docker-base-image "\n"
-             "COPY /lib/ /lib/\n")))
+        (case (:docker-image-type java-runtime)
+          :simple-image (simple-base-image-dockerfile java-runtime)
+          :jlink-image (jlink-image-dockerfile java-runtime))))
 
 (defn tag-base [docker-registry lib]
   (str (if docker-registry (str docker-registry "/") "") (name lib) ":"))
@@ -135,14 +192,14 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
 (defn app-docker-tag [tag-base version]
   (str tag-base version))
 
-(defn lib-docker-tag [tag-base basis docker-lib-base-image]
+(defn lib-docker-tag [tag-base basis java-runtime]
   (let [serialized-libs (pr-str
-                          {:docker-base-image docker-lib-base-image
-                           :libs              (into []
-                                                    (map (fn [[lib coords]]
-                                                           [lib (dissoc coords :dependents :parents :paths :exclusions
-                                                                        :deps/root)]))
-                                                    (all-libs basis))})
+                          {:java-runtime (dissoc java-runtime :java-opts)
+                           :libs         (into []
+                                               (map (fn [[lib coords]]
+                                                      [lib (dissoc coords :dependents :parents :paths :exclusions
+                                                                   :deps/root)]))
+                                               (all-libs basis))})
         hash            (bc/bytes->hex (hash/sha3-256 serialized-libs))]
     (str tag-base "lib-" hash)))
 
@@ -172,25 +229,28 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
                                 basis
                                 target-dir
                                 main-namespace
-                                java-version
-                                docker-base-image-override
-                                docker-registry]}]
-  (let [root                  (or root ".")
-        root-deps             (str (io/file root "deps.edn"))
-        basis                 (or basis (b/create-basis {:project root-deps}))
-        target-dir            (or target-dir "target")
+                                java-runtime
+                                docker-registry
+                                aot]
+                         :or   {java-runtime {:version         :java17
+                                              :type            :jre
+                                              :modules-profile :anvil}}}]
+  (let [root           (or root ".")
+        root-deps      (str (io/file root "deps.edn"))
+        basis          (or basis (b/create-basis {:project root-deps}))
+        target-dir     (or target-dir "target")
         ; 1. create the jar file for the project
-        jar-file              (libs/jar {:lib        lib
-                                         :version    version
-                                         :with-pom?  false
-                                         :root       root
-                                         :basis      basis
-                                         :target-dir target-dir
-                                         :clean?     true})
-        tag-base              (tag-base docker-registry lib)
-        docker-lib-base-image (or docker-base-image-override
-                                  (java-version java-docker-base-images))
-        lib-docker-tag        (lib-docker-tag tag-base basis docker-lib-base-image)]
+        jar-file       (libs/jar {:lib        lib
+                                  :version    version
+                                  :with-pom?  false
+                                  :root       root
+                                  :basis      basis
+                                  :target-dir target-dir
+                                  :clean?     true
+                                  :aot        aot})
+        tag-base       (tag-base docker-registry lib)
+        java-runtime   (resolve-java-runtime java-runtime)
+        lib-docker-tag (lib-docker-tag tag-base basis java-runtime)]
     ; 2. create the docker lib folder
     (let [docker-lib-dir (io/file target-dir "docker-lib")]
       (copy-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
@@ -200,8 +260,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
       (generate-docker-script {:target-path docker-lib-dir
                                :script-name "docker-push.sh"
                                :body        (docker-push-body lib-docker-tag)})
-      (lib-dockerfile {:target-path            docker-lib-dir
-                       :java-docker-base-image docker-lib-base-image})
+      (lib-dockerfile {:target-path  docker-lib-dir
+                       :java-runtime java-runtime})
       ; 3. create the docker app folder
       (let [docker-app-dir (io/file target-dir "docker-app")
             app-dir        (io/file docker-app-dir "app")
@@ -209,6 +269,8 @@ java ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/*\" clojure.main -m "
             latest-tag     (str tag-base "latest")]
         (b/copy-file {:src    jar-file
                       :target (str (io/file app-dir "lib" (fs/file-name jar-file)))})
+        (libs/spit-version-file {:version version
+                                 :dir     app-dir})
         (generate-app-run-script {:target         app-dir
                                   :main-namespace main-namespace})
         (generate-docker-script {:target-path docker-app-dir
@@ -238,9 +300,10 @@ fi
                                             (str "docker tag " app-tag " " latest-tag)
                                             (docker-push-body latest-tag)])})
         (app-dockerfile {:target-path            docker-app-dir
-                         :java-version           java-version
+                         :java-version           (:version java-runtime)
                          :docker-base-image-name lib-docker-tag
                          :version                version
-                         :jar-file               jar-file})
+                         :jar-file               jar-file
+                         :java-opts              (:java-opts java-runtime)})
         {:app-docker-tag app-tag
          :lib-docker-tag lib-docker-tag}))))

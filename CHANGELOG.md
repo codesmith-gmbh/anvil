@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Added
+
+- aot support.
+
+### Changed
+
+- BREAKING CHANGE: the docker creation has significantly changed to support the following features:
+  - jre as well as jdk runtimes
+  - with java version > 11, jre images are built based on [bitnami minideb](https://hub.docker.com/r/bitnami/minideb) with jlink.
+
 ## 0.2.65
 
 ### Added

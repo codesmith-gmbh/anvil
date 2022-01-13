@@ -17,18 +17,19 @@
 (def lib 'ch.codesmith/anvil)
 (def version (str "0.2." (b/git-count-revs {})))
 
-(defn test-docker-generator [with-aot?]
+(defn test-docker-generator [aot]
   (apps/docker-generator {:lib            lib
                           :version        version
                           :root           "."
-                          :java-version   :openjdk/jdk17
                           :target-dir     "target"
+                          :aot            aot
                           :main-namespace "test"})
   (is true))
 
 
 (deftest docker-generator-correctness
-  (test-docker-generator false))
+  (test-docker-generator nil)
+  (test-docker-generator {}))
 
 (defn start-registry! [port]
   (sh/sh! "docker" "run" "-d" "-p" (str port ":5000") "--name" "registry" "registry:2"))
@@ -47,13 +48,16 @@
   (doseq [image (registry-images)]
     (docker-rmi! image)))
 
-(deftest hello-world-correctness
+(defn test-hello-world [aot]
   (let [docker-registry "localhost:5001"
         {:keys [app-docker-tag
                 lib-docker-tag]} (apps/docker-generator
                                    (merge hw/base-properties
-                                          {:java-version    :openjdk/jdk17
+                                          {:java-runtime    {:version         :java17
+                                                             :type            :jre
+                                                             :modules-profile :java.base}
                                            :main-namespace  "hello"
+                                           :aot             aot
                                            :docker-registry docker-registry}))
         port            5001]
     (try
@@ -75,3 +79,7 @@
       (finally
         (force-stop-registry!))))
   (is true))
+
+(deftest hello-world-correctness
+  (test-hello-world nil)
+  (test-hello-world {}))
