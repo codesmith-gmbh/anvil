@@ -59,16 +59,20 @@
                        "(?m)^" deps-coords " \\{:mvn/version .*\\}$"))
                    (str deps-coords " {:mvn/version \"" version "\"}")))
 
-(defn git-release! [{:keys [deps-coords version release-branch-name deps/manifest]}]
+(defn default-update-for-release [data]
+  (update-readme (assoc data :file "README.md")))
+
+(defn git-release! [{:keys [deps-coords version release-branch-name deps/manifest
+                            update-for-release]
+                     :or   {default-update-for-release default-update-for-release}}]
   (check-released-allowed release-branch-name)
   (let [tag (str "v" version)]
     (update-changelog-file "CHANGELOG.md" version)
     (git-commit-all! (str "CHANGELOG.md release " version))
     (git-tag-version! tag version (str "Release " deps-coords))
-    (update-readme {:file          "README.md"
-                    :deps-coords   deps-coords
-                    :tag           tag
-                    :version       version
-                    :deps/manifest (or manifest :deps)})
+    (update-for-release {:deps-coords   deps-coords
+                         :tag           tag
+                         :version       version
+                         :deps/manifest (or manifest :deps)})
     (git-commit-all! "Update for release")
     (git-push-all!)))
