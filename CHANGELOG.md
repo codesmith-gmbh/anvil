@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.3.79
+
 ### Added
 
 - clj-kondo as a linter.
