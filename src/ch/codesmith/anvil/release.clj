@@ -64,7 +64,7 @@
 
 (defn git-release! [{:keys [deps-coords version release-branch-name deps/manifest
                             update-for-release]
-                     :or   {default-update-for-release default-update-for-release}}]
+                     :or   {update-for-release default-update-for-release}}]
   (check-released-allowed release-branch-name)
   (let [tag (str "v" version)]
     (update-changelog-file "CHANGELOG.md" version)

@@ -1,5 +1,5 @@
 (ns ch.codesmith.anvil.libs-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is]]
             [ch.codesmith.anvil.libs :as libs]
             [clojure.tools.build.api :as b]
             [babashka.fs :as fs]

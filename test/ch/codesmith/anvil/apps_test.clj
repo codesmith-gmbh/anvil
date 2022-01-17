@@ -1,5 +1,5 @@
 (ns ch.codesmith.anvil.apps-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is]]
             [ch.codesmith.anvil.apps :as apps]
             [ch.codesmith.anvil.shell :as sh]
             [clojure.tools.build.api :as b]

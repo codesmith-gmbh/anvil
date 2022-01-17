@@ -1,6 +1,6 @@
 (ns ch.codesmith.anvil.release-test
   (:require [ch.codesmith.anvil.release :as rel]
-            [clojure.test :refer :all]
+            [clojure.test :refer [deftest is]]
             [clojure.java.io :as io]))
 
 (def test-dir (io/file "target" "test" "release-test"))

@@ -1,5 +1,5 @@
 (ns hello)
 
-(defn -main [& args]
+(defn -main [& _]
   (println "Hello World!")
   (println (slurp "/app/version.edn")))

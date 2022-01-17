@@ -12,8 +12,9 @@
                       (assoc result
                         :args args))))))
 
-(defn sh! [& args]
+(defn sh!
   "Execute the given shell command and redirect the ouput/error to the standard output error; returns nil."
+  [& args]
   (let [^Process process (.. (ProcessBuilder. ^List args)
                              (inheritIO)
                              (start))

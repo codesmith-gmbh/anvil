@@ -42,7 +42,7 @@
    [::pom/url "https://opensource.org/licenses/MIT"]])
 
 (defn pull-down [m old-key new-key]
-  (if-let [val (get m old-key)]
+  (when-let [val (get m old-key)]
     [new-key val]))
 
 (defn description-xml-fragments [{:keys [description inception-year organization

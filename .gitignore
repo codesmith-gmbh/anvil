@@ -11,3 +11,4 @@
 /anvil.iml
 /nvd/target/
 /.DS_Store
+/.clj-kondo/.cache/
