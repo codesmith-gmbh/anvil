@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Added
+
+- clj-kondo as a linter.
+- pass description-data for jars for docker images.
+
 ## 0.3.72
 
 ### Added
