@@ -6,11 +6,11 @@
 (def lib 'io.github.codesmith-gmbh/anvil)
 (def version (str "0.3." (b/git-count-revs {})))
 
-(defn run-tests []
-  (sh/sh! "./bin/kaocha"))
+(defn verify []
+  (sh/sh! "./build/verify"))
 
 (defn release [_]
-  (run-tests)
+  (verify)
   (rel/git-release! {:deps-coords         lib
                      :version             version
                      :release-branch-name "master"}))
