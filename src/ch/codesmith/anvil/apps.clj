@@ -231,6 +231,7 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
                                 main-namespace
                                 java-runtime
                                 docker-registry
+                                description-data
                                 aot]
                          :or   {java-runtime {:version         :java17
                                               :type            :jre
@@ -240,14 +241,15 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
         basis          (or basis (b/create-basis {:project root-deps}))
         target-dir     (or target-dir "target")
         ; 1. create the jar file for the project
-        jar-file       (libs/jar {:lib        lib
-                                  :version    version
-                                  :with-pom?  false
-                                  :root       root
-                                  :basis      basis
-                                  :target-dir target-dir
-                                  :clean?     true
-                                  :aot        aot})
+        jar-file       (libs/jar {:lib              lib
+                                  :version          version
+                                  :with-pom?        false
+                                  :root             root
+                                  :basis            basis
+                                  :target-dir       target-dir
+                                  :description-data description-data
+                                  :clean?           true
+                                  :aot              aot})
         tag-base       (tag-base docker-registry lib)
         java-runtime   (resolve-java-runtime java-runtime)
         lib-docker-tag (lib-docker-tag tag-base basis java-runtime)]
