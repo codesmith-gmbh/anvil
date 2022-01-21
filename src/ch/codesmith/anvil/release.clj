@@ -32,47 +32,58 @@
   (sh/sh! "git" "push")
   (sh/sh! "git" "push" "--tags"))
 
-(defn replace-in-file [f match replacement]
-  (spit f
-        (str/replace (slurp f) match replacement)))
+(defn replace-in-file [file f]
+  (spit file (f (slurp file))))
+
 
 (defn update-changelog-file [file version]
   (replace-in-file file
-                   #"(?m)^## Unreleased(.*)$"
-                   (str "## Unreleased\n\n## " version)))
+                   (fn [text]
+                     (str/replace text
+                                  #"(?m)^## Unreleased(.*)$"
+                                  (str "## Unreleased\n\n## " version)))))
 
-(defmulti update-readme (fn [{:keys [:deps/manifest]}] manifest))
+(defmulti update-readme (fn [{:keys [artifact-type]}] artifact-type))
 
-(defmethod update-readme :deps [{:keys [file deps-coords tag]}]
-  (replace-in-file file
-                   (Pattern/compile
-                     (str
-                       "(?m)^" deps-coords " \\{:git/tag .*\\}$"))
-                   (str deps-coords " {:git/tag \""
-                        tag "\" :git/sha \""
-                        (short-sha tag) "\"}")))
+(defmethod update-readme :deps [{:keys [deps-coords git/tag]}]
+  #(str/replace %
+                (Pattern/compile
+                  (str
+                    "(?m)^" deps-coords " \\{:git/tag .*\\}$"))
+                (str deps-coords " {:git/tag \""
+                     tag "\" :git/sha \""
+                     (short-sha tag) "\"}")))
 
-(defmethod update-readme :mvn [{:keys [file deps-coords version]}]
-  (replace-in-file file
-                   (Pattern/compile
-                     (str
-                       "(?m)^" deps-coords " \\{:mvn/version .*\\}$"))
-                   (str deps-coords " {:mvn/version \"" version "\"}")))
+(defmethod update-readme :mvn [{:keys [deps-coords version]}]
+  #(str/replace %
+                (Pattern/compile
+                  (str
+                    "(?m)^" deps-coords " \\{:mvn/version .*\\}$"))
+                (str deps-coords " {:mvn/version \"" version "\"}")))
+
+(defmethod update-readme :docker-image [{:keys [docker/tag]}]
+  #(str/replace %
+                #"(?m)^```bash\ndocker pull.*\n```\n"
+                (str "```bash\ndocker pull " tag "\n```\n")))
 
 (defn default-update-for-release [data]
-  (update-readme (assoc data :file "README.md")))
+  (replace-in-file "README.md"
+                   (update-readme data)))
 
-(defn git-release! [{:keys [deps-coords version release-branch-name deps/manifest
+(defn git-release! [{:keys [deps-coords version release-branch-name artifact-type
                             update-for-release]
-                     :or   {update-for-release default-update-for-release}}]
+                     :or   {update-for-release default-update-for-release
+                            artifact-type      :deps}
+                     :as   data}]
   (check-released-allowed release-branch-name)
   (let [tag (str "v" version)]
     (update-changelog-file "CHANGELOG.md" version)
     (git-commit-all! (str "CHANGELOG.md release " version))
-    (git-tag-version! tag version (str "Release " deps-coords))
+    (git-tag-version! tag version (str "Release " version " for " deps-coords))
     (update-for-release {:deps-coords   deps-coords
-                         :tag           tag
+                         :git/tag       tag
+                         :docker/tag    (:docker/tag data)
                          :version       version
-                         :deps/manifest (or manifest :deps)})
+                         :artifact-type artifact-type})
     (git-commit-all! "Update for release")
     (git-push-all!)))

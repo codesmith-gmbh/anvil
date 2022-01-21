@@ -28,16 +28,13 @@ Hello
     (rel/update-changelog-file change-log-test-file "1.0.0")
     (is (= changelog-after (slurp change-log-test-file)))))
 
-(defn test-update-readme [{:keys [before after deps/manifest]}]
-  (let [readme-test-file (io/file test-dir "README.md")]
-    (io/make-parents readme-test-file)
-    (spit readme-test-file before)
-    (rel/update-readme {:file          readme-test-file
-                        :deps-coords   'io.github.codesmith-gmbh/anvil
-                        :tag           "v0.1.35"
-                        :version       "0.1.35"
-                        :deps/manifest manifest})
-    (is (= after (slurp readme-test-file)))))
+(defn test-update-readme [{:keys [before after artifact-type]}]
+  (let [update-readme (rel/update-readme {:deps-coords   'io.github.codesmith-gmbh/anvil
+                                          :git/tag       "v0.1.35"
+                                          :docker/tag    "image:0.1.15"
+                                          :version       "0.1.35"
+                                          :artifact-type artifact-type})]
+    (is (= after (update-readme before)))))
 
 (deftest update-readme-correctness
   (test-update-readme {:before        "# README
@@ -50,7 +47,7 @@ io.github.codesmith-gmbh/anvil {:git/tag \"????\" :git/sha \"???\"}
 io.github.codesmith-gmbh/anvil {:git/tag \"v0.1.35\" :git/sha \"de11727\"}
 ```
 "
-                       :deps/manifest :deps})
+                       :artifact-type :deps})
   (test-update-readme {:before        "# README
 ```
 io.github.codesmith-gmbh/anvil {:mvn/version \"????\"}
@@ -61,4 +58,15 @@ io.github.codesmith-gmbh/anvil {:mvn/version \"????\"}
 io.github.codesmith-gmbh/anvil {:mvn/version \"0.1.35\"}
 ```
 "
-                       :deps/manifest :mvn}))
+                       :artifact-type :mvn})
+  (test-update-readme {:before        "# README
+```bash
+docker pull ???
+```
+"
+                       :after         "# README
+```bash
+docker pull image:0.1.15
+```
+"
+                       :artifact-type :docker-image}))
