@@ -2,7 +2,8 @@
   (:require [ch.codesmith.anvil.shell :as sh]
             [clojure.string :as str]
             ch.codesmith.anvil.io)
-  (:import (java.util.regex Pattern)))
+  (:import (java.util.regex Pattern)
+           (java.time LocalDate)))
 
 (defn git-clean? []
   (= (count (sh/sh "git" "status" "-s")) 0))
@@ -41,7 +42,7 @@
                    (fn [text]
                      (str/replace text
                                   #"(?m)^## Unreleased(.*)$"
-                                  (str "## Unreleased\n\n## " version)))))
+                                  (str "## Unreleased\n\n## " version " (" (LocalDate/now) ")")))))
 
 (defmulti update-readme (fn [{:keys [artifact-type]}] artifact-type))
 
