@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- releasing: sign git tag
+- releasing: Add Release LocalDate in CHANGELOG.
+
 ## 0.4.84
 
 ### Changed
