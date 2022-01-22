@@ -23,7 +23,7 @@
     (throw (ex-info (str "Git is not on the release branch: " release-branch-name) {:release-branch-name release-branch-name}))))
 
 (defn git-tag-version! [tag version message]
-  (sh/sh! "git" "tag" "-am" (str "\"" message " on version: " version \") tag))
+  (sh/sh! "git" "tag" "-s" tag "-m" (str "\"" message " on version: " version \")))
 
 (defn git-commit-all! [message]
   (sh/sh! "git" "commit" "-am" message))
