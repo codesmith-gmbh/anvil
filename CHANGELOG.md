@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- BREAKING CHANGE: update readme needs different keys, supports docker images.
+
 ## 0.3.79
 
 ### Added
