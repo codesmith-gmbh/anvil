@@ -4,7 +4,8 @@
             [clojure.tools.build.api :as b]
             [babashka.fs :as fs]
             [ch.codesmith.anvil.helloworld :as hw]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [ch.codesmith.anvil.basis :as ab])
   (:import (java.util.zip ZipFile ZipEntry)))
 
 (def lib 'ch.codesmith/anvil)
@@ -12,9 +13,8 @@
 (def target-dir "target")
 
 (defn test-jar [with-pom?]
-  (let [basis (b/create-basis {:project "deps.edn"
-                               :aliases [:test-resources]
-                               })]
+  (let [basis (ab/create-basis {:project "deps.edn"
+                                :aliases [:test-resources]})]
     (libs/jar {:lib              lib
                :version          version
                :with-pom?        with-pom?

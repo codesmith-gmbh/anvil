@@ -7,7 +7,8 @@
             [buddy.core.codecs :as bc]
             [com.rpl.specter :as sp]
             [clojure.string :as str]
-            ch.codesmith.anvil.io))
+            ch.codesmith.anvil.io
+            [ch.codesmith.anvil.basis :as ab]))
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
@@ -238,7 +239,7 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
                                               :modules-profile :anvil}}}]
   (let [root           (or root ".")
         root-deps      (str (io/file root "deps.edn"))
-        basis          (or basis (b/create-basis {:project root-deps}))
+        basis          (or basis (ab/create-basis {:project root-deps}))
         target-dir     (or target-dir "target")
         ; 1. create the jar file for the project
         jar-file       (libs/jar {:lib              lib

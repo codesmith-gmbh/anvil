@@ -4,7 +4,8 @@
             [deps-deploy.deps-deploy :as deploy]
             [babashka.fs :as fs]
             [ch.codesmith.anvil.pom :as pom]
-            ch.codesmith.anvil.io))
+            ch.codesmith.anvil.io
+            [ch.codesmith.anvil.basis :as ab]))
 
 (defn spit-version-file [{:keys [version dir]}]
   (spit (io/file dir "version.edn")
@@ -19,7 +20,7 @@
                            description-data
                            clean?
                            aot]}]
-  (let [basis     (or basis (b/create-basis {:project (str (io/file root "deps.edn"))}))
+  (let [basis     (or basis (ab/create-basis {:project (str (io/file root "deps.edn"))}))
         class-dir (str (io/file target-dir "classes"))
         src-dirs  (into []
                         (keep (fn [[lib {:keys [path-key]}]]
