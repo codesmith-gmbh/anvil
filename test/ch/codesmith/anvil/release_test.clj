@@ -1,7 +1,8 @@
 (ns ch.codesmith.anvil.release-test
   (:require [ch.codesmith.anvil.release :as rel]
             [clojure.test :refer [deftest is]]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io])
+  (:import (java.time LocalDate)))
 
 (def test-dir (io/file "target" "test" "release-test"))
 
@@ -17,7 +18,7 @@ Hello
 
 ## Unreleased
 
-## 1.0.0
+## 1.0.0 (2022-01-22)
 Hello
 ")
 
@@ -25,7 +26,8 @@ Hello
   (let [change-log-test-file (io/file test-dir "CHANGELOG.md")]
     (io/make-parents change-log-test-file)
     (spit change-log-test-file changelog-before)
-    (rel/update-changelog-file change-log-test-file "1.0.0")
+    (rel/update-changelog-file change-log-test-file {:version    "1.0.0"
+                                                     :local-date (LocalDate/of 2022 1 22)})
     (is (= changelog-after (slurp change-log-test-file)))))
 
 (defn test-update-readme [{:keys [before after artifact-type]}]

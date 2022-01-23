@@ -37,12 +37,12 @@
   (spit file (f (slurp file))))
 
 
-(defn update-changelog-file [file version]
+(defn update-changelog-file [file {:keys [version local-date]}]
   (replace-in-file file
                    (fn [text]
                      (str/replace text
                                   #"(?m)^## Unreleased(.*)$"
-                                  (str "## Unreleased\n\n## " version " (" (LocalDate/now) ")")))))
+                                  (str "## Unreleased\n\n## " version " (" local-date ")")))))
 
 (defmulti update-readme (fn [{:keys [artifact-type]}] artifact-type))
 
@@ -78,7 +78,8 @@
                      :as   data}]
   (check-released-allowed release-branch-name)
   (let [tag (str "v" version)]
-    (update-changelog-file "CHANGELOG.md" version)
+    (update-changelog-file "CHANGELOG.md" {:version    version
+                                           :local-date (LocalDate/now)})
     (git-commit-all! (str "CHANGELOG.md release " version))
     (git-tag-version! tag version (str "Release " version " for " deps-coords))
     (update-for-release {:deps-coords   deps-coords
