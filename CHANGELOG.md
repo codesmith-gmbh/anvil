@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Added
+
+- gitlab scm
+
 ## 0.4.97 (2022-01-23)
 
 ## 0.4.93 (2022-01-23)
