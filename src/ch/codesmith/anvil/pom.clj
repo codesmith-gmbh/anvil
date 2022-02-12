@@ -12,17 +12,29 @@
   [{:keys [organization project]}]
   (str "https://github.com/" organization "/" project))
 
+(defmethod scm-project-url :gitlab
+  [{:keys [organization project]}]
+  (str "https://gitlab.com/" organization "/" project))
+
 (defmulti scm-connection :type)
 
 (defmethod scm-connection :github
   [{:keys [organization project]}]
-  (str "scm:git:git://github.com/" organization "/" project ".git"))
+  (str "scm:git:https://github.com/" organization "/" project ".git"))
+
+(defmethod scm-connection :gitlab
+  [{:keys [organization project]}]
+  (str "scm:git:https://gitlab.com/" organization "/" project ".git"))
 
 (defmulti scm-developer-connection :type)
 
 (defmethod scm-developer-connection :github
   [{:keys [organization project]}]
   (str "scm:git:ssh://git@github.com/" organization "/" project ".git"))
+
+(defmethod scm-developer-connection :gitlab
+  [{:keys [organization project]}]
+  (str "scm:git:ssh://git@gitlab.com/" organization "/" project ".git"))
 
 (defmulti license-element identity)
 
