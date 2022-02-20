@@ -88,17 +88,17 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
 
 (def java-jdk-docker-base-images
   {:java8  "openjdk:8u302-slim"
-   :java11 "openjdk:11.0.13-jdk-slim-buster"
+   :java11 "openjdk:11.0.14-jdk-slim-buster"
    :java14 "openjdk:14.0.2-jdk-slim-buster"
    :java15 "openjdk:15.0.2-jdk-slim-buster"
    :java16 "openjdk:16.0.2-jdk-slim-buster"
-   :java17 "openjdk:17.0.1-jdk-slim-buster"})
+   :java17 "openjdk:17.0.2-jdk-slim-buster"})
 
 (def java-jre-docker-base-images
   {:java8  "openjdk:8u312-jre-slim-buster"
    :java11 "openjdk:11.0.13-jre-slim-buster"})
 
-(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220112T215005Z")
+(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220218T213206Z")
 
 (defmulti resolve-modules identity)
 
