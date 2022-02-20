@@ -32,9 +32,9 @@
 
 (defmethod copy-jar
   :deps
-  [lib {:keys [git/tag git/sha deps/root]} jar-dir target-dir]
+  [lib {:keys [git/tag git/sha deps/root anvil/version]} jar-dir target-dir]
   (let [target-dir     (io/file target-dir (nondir-full-name lib))
-        version        (if tag (str tag "-" sha) sha)
+        version        (or version (if tag (str tag "-" sha) sha))
         jar-file       (libs/jar {:lib        lib
                                   :version    version
                                   :with-pom?  false
@@ -64,10 +64,10 @@
               [lib (get libs lib)]))
           used-libs)))
 
-(defn copy-jars [basis jar-dir target-dir]
+(defn copy-jars [basis local-version jar-dir target-dir]
   (let [all-libs (all-libs basis)]
     (doseq [[lib props] all-libs]
-      (copy-jar lib props jar-dir target-dir))))
+      (copy-jar lib (assoc props :anvil/version local-version) jar-dir target-dir))))
 
 (defn make-executable [f]
   (fs/set-posix-file-permissions f "rwxr-xr-x"))
@@ -258,7 +258,7 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
         lib-docker-tag (lib-docker-tag tag-base basis java-runtime)
         docker-lib-dir (io/file target-dir "docker-lib")]
     ; 2. create the docker lib folder
-    (copy-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
+    (copy-jars basis version (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
     (generate-docker-script {:target-path docker-lib-dir
                              :script-name "docker-build.sh"
                              :body        (docker-build-body lib-docker-tag)})
