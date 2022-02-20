@@ -295,14 +295,13 @@ else
 fi
 "
                                               (docker-build-body app-tag)
-                                              )})
+                                              (str "\ndocker tag " app-tag " " latest-tag))})
       (generate-docker-script {:target-path docker-app-dir
                                :script-name "docker-push.sh"
                                :body
                                (str/join "\n"
                                          ["../docker-lib/docker-push.sh"
                                           (docker-push-body app-tag)
-                                          (str "docker tag " app-tag " " latest-tag)
                                           (docker-push-body latest-tag)])})
       (app-dockerfile {:target-path            docker-app-dir
                        :java-version           (:version java-runtime)
