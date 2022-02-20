@@ -64,10 +64,20 @@
               [lib (get libs lib)]))
           used-libs)))
 
-(defn copy-jars [basis local-version jar-dir target-dir]
+(defn copy-jars [basis lib-filter props-trans jar-dir target-dir]
   (let [all-libs (all-libs basis)]
     (doseq [[lib props] all-libs]
-      (copy-jar lib (assoc props :anvil/version local-version) jar-dir target-dir))))
+      (when (lib-filter props)
+        (copy-jar lib (props-trans props) jar-dir target-dir)))))
+
+(defn is-local-dep? [props]
+  (:local/root props))
+
+(defn copy-lib-jars [basis jar-dir target-dir]
+  (copy-jars basis (complement is-local-dep?) identity jar-dir target-dir))
+
+(defn copy-app-jars [basis local-version jar-dir target-dir]
+  (copy-jars basis is-local-dep? #(assoc % :anvil/version local-version) jar-dir target-dir))
 
 (defn make-executable [f]
   (fs/set-posix-file-permissions f "rwxr-xr-x"))
@@ -258,7 +268,7 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
         lib-docker-tag (lib-docker-tag tag-base basis java-runtime)
         docker-lib-dir (io/file target-dir "docker-lib")]
     ; 2. create the docker lib folder
-    (copy-jars basis version (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
+    (copy-lib-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
     (generate-docker-script {:target-path docker-lib-dir
                              :script-name "docker-build.sh"
                              :body        (docker-build-body lib-docker-tag)})
@@ -270,10 +280,12 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
     ; 3. create the docker app folder
     (let [docker-app-dir (io/file target-dir "docker-app")
           app-dir        (io/file docker-app-dir "app")
+          app-lib-dir    (io/file app-dir "lib")
           app-tag        (str tag-base version)
           latest-tag     (str tag-base "latest")]
+      (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
       (b/copy-file {:src    jar-file
-                    :target (str (io/file app-dir "lib" (fs/file-name jar-file)))})
+                    :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
       (libs/spit-version-file {:version version
                                :dir     app-dir})
       (generate-app-run-script {:target         app-dir
