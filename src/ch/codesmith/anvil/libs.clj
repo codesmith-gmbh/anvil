@@ -5,11 +5,20 @@
             [babashka.fs :as fs]
             [ch.codesmith.anvil.pom :as pom]
             ch.codesmith.anvil.io
-            [ch.codesmith.anvil.basis :as ab]))
+            [ch.codesmith.anvil.basis :as ab]
+            [clojure.string :as str]))
 
 (defn spit-version-file [{:keys [version dir]}]
-  (spit (io/file dir "version.edn")
-        {:version version}))
+  (let [file (io/file dir "version.edn")]
+    (io/make-parents file)
+    (spit file
+          {:version version})))
+
+(defn lib-resources-dir [lib]
+  (io/file
+    (when-let [ns (namespace lib)]
+      (str/replace ns "." "/"))
+    (name lib)))
 
 (defn jar ^String [{:keys [lib
                            version
@@ -46,7 +55,8 @@
       (b/copy-dir {:src-dirs   src-dirs
                    :target-dir class-dir}))
     (spit-version-file {:version version
-                        :dir     class-dir})
+                        :dir     (io/file class-dir
+                                          (lib-resources-dir lib))})
     (b/jar {:class-dir class-dir
             :jar-file  jar-file})
     jar-file))
