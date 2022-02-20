@@ -25,8 +25,10 @@
 (defn full-jar-file-name [lib version]
   (nondir-full-name lib (str version ".jar")))
 
-(defmulti copy-jar (fn #_{:clj-kondo/ignore [:unused-binding]} [lib props jar-dir target-dir]
-                     (:deps/manifest props)))
+(defmulti copy-jar
+          {:arglists '([lib props jar-dir target-dir])}
+  (fn [_ props _ _]
+    (:deps/manifest props)))
 
 (defmethod copy-jar
   :deps
