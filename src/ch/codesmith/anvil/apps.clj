@@ -10,6 +10,8 @@
             ch.codesmith.anvil.io
             [ch.codesmith.anvil.basis :as ab]))
 
+(def anvil-epoch 5)
+
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
   [& args]
@@ -205,9 +207,12 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
 (defn app-docker-tag [tag-base version]
   (str tag-base version))
 
+
+
 (defn lib-docker-tag [tag-base basis java-runtime]
   (let [serialized-libs (pr-str
                           {:java-runtime (dissoc java-runtime :java-opts)
+                           :anvil-epoch  anvil-epoch
                            :libs         (into []
                                                (map (fn [[lib coords]]
                                                       [lib (dissoc coords :dependents :parents :paths :exclusions
