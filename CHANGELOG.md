@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.5.116 (2022-02-21)
+
 ## 0.5.113 (2022-02-20)
 
 ## 0.4.107 (2022-02-20)
