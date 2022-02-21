@@ -53,12 +53,13 @@
         {:keys [app-docker-tag
                 lib-docker-tag]} (apps/docker-generator
                                    (merge hw/base-properties
-                                          {:java-runtime    {:version         :java17
-                                                             :type            :jre
-                                                             :modules-profile :java.base}
-                                           :main-namespace  "hello"
-                                           :aot             aot
-                                           :docker-registry docker-registry}))
+                                          {:java-runtime         {:version         :java17
+                                                                  :type            :jre
+                                                                  :modules-profile :java.base}
+                                           :main-namespace       "hello"
+                                           :aot                  aot
+                                           :docker-registry      docker-registry
+                                           :docker-image-options {:exposed-ports [8000 1400]}}))
         port            5001]
     (try
       ; 1. cleanup

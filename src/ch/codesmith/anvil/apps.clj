@@ -170,15 +170,20 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
   [_]
   "-XX:MaxRAMPercentage=85")
 
-(defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version java-opts]}]
+(defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version java-opts exposed-ports]}]
   (println "Creating the App Dockerfile")
   (spit (fs/path target-path "Dockerfile")
-        (str "FROM " docker-base-image-name "\n"
-             "ENV VERSION=\"" version "\"\n"
-             "ENV LOCATION=\":docker\"\n"
-             "ENV JAVA_OPTS=\"" (or java-opts (default-java-opts java-version)) "\"\n"
-             "COPY /app/ /app/\n"
-             "CMD [\"/app/bin/run.sh\"]\n")))
+        (str/join "\n"
+                  (concat
+                    [(str "FROM " docker-base-image-name)]
+                    (map (fn [port]
+                           (str "EXPOSE " port))
+                         exposed-ports)
+                    [(str "ENV VERSION=\"" version "\"")
+                     "ENV LOCATION=\":docker\""
+                     (str "ENV JAVA_OPTS=\"" (or java-opts (default-java-opts java-version)) "\"")
+                     "COPY /app/ /app/"
+                     "CMD [\"/app/bin/run.sh\"]"]))))
 
 (defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
   (str "FROM " docker-base-image "\n"
@@ -248,6 +253,7 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
                                 target-dir
                                 main-namespace
                                 java-runtime
+                                docker-image-options
                                 docker-registry
                                 description-data
                                 aot]
@@ -324,6 +330,7 @@ fi
                        :java-version           (:version java-runtime)
                        :docker-base-image-name lib-docker-tag
                        :version                version
+                       :exposed-ports          (:exposed-ports docker-image-options)
                        :jar-file               jar-file
                        :java-opts              (:java-opts java-runtime)})
       {:app-docker-tag app-tag
