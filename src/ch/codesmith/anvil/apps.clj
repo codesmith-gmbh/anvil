@@ -10,7 +10,7 @@
             ch.codesmith.anvil.io
             [ch.codesmith.anvil.basis :as ab]))
 
-(def anvil-epoch 5)
+(def anvil-epoch 6)
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
@@ -131,7 +131,8 @@ java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
     "java.sql.rowset"
     "java.transaction.xa"
     "java.xml"
-    "java.xml.crypto"})
+    "java.xml.crypto"
+    "jdk.unsupported"})
 
 (defmethod resolve-modules :java.se [_]
   #{"java.se"})

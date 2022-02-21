@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- add the jdk.unsupported module to the default anvil profile.
+
 ## 0.5.116 (2022-02-21)
 
 ## 0.5.113 (2022-02-20)
