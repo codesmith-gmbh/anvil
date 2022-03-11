@@ -4,7 +4,7 @@ A clojure library to build artifacts. Include the following dependencies in your
 [deps.edn](https://clojure.org/reference/deps_and_cli):
 
 ```
-io.github.codesmith-gmbh/anvil {:git/tag "v0.6.119" :git/sha "417a1e6"}
+io.github.codesmith-gmbh/anvil {:git/tag "v0.6.123" :git/sha "c052a96"}
 ```
 
 ## License
