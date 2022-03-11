@@ -92,7 +92,7 @@
           (str
             "#!/bin/bash
 DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
-java ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
+java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
             main-namespace
             "\n"))
     (make-executable script-path)))
