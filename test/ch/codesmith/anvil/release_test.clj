@@ -1,7 +1,8 @@
 (ns ch.codesmith.anvil.release-test
   (:require [ch.codesmith.anvil.release :as rel]
             [clojure.test :refer [deftest is]]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.string :as str])
   (:import (java.time LocalDate)))
 
 (def test-dir (io/file "target" "test" "release-test"))
@@ -36,38 +37,38 @@ Hello
                                           :docker/tag    "image:0.1.15"
                                           :version       "0.1.35"
                                           :artifact-type artifact-type})]
-    (is (= after (update-readme before)))))
+    (is (= (update-readme before) after))))
 
 (deftest update-readme-correctness
   (test-update-readme {:before        "# README
-```
-io.github.codesmith-gmbh/anvil {:git/tag \"????\" :git/sha \"???\"}
+```deps
+io.github.codesmith-gmbh/anvil {:git/tag \"???\" :git/sha \"???\"}
 ```
 "
                        :after         "# README
-```
+```deps
 io.github.codesmith-gmbh/anvil {:git/tag \"v0.1.35\" :git/sha \"de11727\"}
 ```
 "
                        :artifact-type :deps})
   (test-update-readme {:before        "# README
-```
+```deps
 io.github.codesmith-gmbh/anvil {:mvn/version \"????\"}
 ```
 "
                        :after         "# README
-```
+```deps
 io.github.codesmith-gmbh/anvil {:mvn/version \"0.1.35\"}
 ```
 "
                        :artifact-type :mvn})
   (test-update-readme {:before        "# README
-```bash
+```deps
 docker pull ???
 ```
 "
                        :after         "# README
-```bash
+```deps
 docker pull image:0.1.15
 ```
 "

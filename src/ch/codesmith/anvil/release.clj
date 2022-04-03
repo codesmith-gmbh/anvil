@@ -27,7 +27,8 @@
   (sh/sh! "git" "tag" "-s" tag "-m" (str "\"" message " on version: " version \")))
 
 (defn git-commit-all! [message]
-  (sh/sh! "git" "commit" "-am" message))
+  (when-not (not (git-clean?))
+    (sh/sh! "git" "commit" "-am" message)))
 
 (defn git-push-all! []
   (sh/sh! "git" "push")
@@ -44,28 +45,27 @@
                                   #"(?m)^## Unreleased(.*)$"
                                   (str "## Unreleased\n\n## " version " (" local-date ")")))))
 
-(defmulti update-readme (fn [{:keys [artifact-type]}] artifact-type))
+(defmulti dependency-line :artifact-type)
 
-(defmethod update-readme :deps [{:keys [deps-coords git/tag]}]
-  #(str/replace %
-                (Pattern/compile
-                  (str
-                    "(?m)^" deps-coords " \\{:git/tag .*\\}$"))
-                (str deps-coords " {:git/tag \""
-                     tag "\" :git/sha \""
-                     (short-sha tag) "\"}")))
+(defmethod dependency-line :deps [{:keys [deps-coords git/tag]}]
+  (str deps-coords " {:git/tag \""
+       tag "\" :git/sha \""
+       (short-sha tag) "\"}"))
 
-(defmethod update-readme :mvn [{:keys [deps-coords version]}]
-  #(str/replace %
-                (Pattern/compile
-                  (str
-                    "(?m)^" deps-coords " \\{:mvn/version .*\\}$"))
-                (str deps-coords " {:mvn/version \"" version "\"}")))
+(defmethod dependency-line :mvn [{:keys [deps-coords version]}]
+  (str deps-coords " {:mvn/version \"" version "\"}"))
 
-(defmethod update-readme :docker-image [{:keys [docker/tag]}]
-  #(str/replace %
-                #"(?m)^```bash\ndocker pull.*\n```\n"
-                (str "```bash\ndocker pull " tag "\n```\n")))
+(defmethod dependency-line :docker-image [{:keys [docker/tag]}]
+  (str "docker pull " tag))
+
+(defn update-readme [data]
+  (fn [content]
+    (str/replace-first
+      content
+      #"```deps.*(?s:.*?)```"
+      (str "```deps\n"
+           (dependency-line data)
+           "\n```"))))
 
 (defn default-update-for-release [data]
   (replace-in-file "README.md"
