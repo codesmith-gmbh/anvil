@@ -51,7 +51,7 @@
                                   #"(?m)^## Unreleased(.*)$"
                                   (str "## Unreleased\n\n## " version " (" local-date ")")))))
 
-(defmulti dependency-line (fn [data artifact] (or (:artifact-type artifact) :deps)))
+(defmulti dependency-line (fn [#_:clj-kondo/ignore data artifact] (or (:artifact-type artifact) :deps)))
 
 (defmethod dependency-line :deps [data {:keys [deps-coords] :as artifact}]
   (let [tag (git-version-tag (fcoalesce :version artifact data))]

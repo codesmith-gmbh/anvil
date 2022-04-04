@@ -1,8 +1,7 @@
 (ns ch.codesmith.anvil.release-test
   (:require [ch.codesmith.anvil.release :as rel]
-            [clojure.test :refer [deftest is]]
             [clojure.java.io :as io]
-            [clojure.string :as str])
+            [clojure.test :refer [deftest is]])
   (:import (java.time LocalDate)))
 
 (def test-dir (io/file "target" "test" "release-test"))

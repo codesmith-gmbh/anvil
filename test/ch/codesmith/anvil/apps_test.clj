@@ -1,10 +1,10 @@
 (ns ch.codesmith.anvil.apps-test
-  (:require [clojure.test :refer [deftest is]]
-            [ch.codesmith.anvil.apps :as apps]
+  (:require [ch.codesmith.anvil.apps :as apps]
+            [ch.codesmith.anvil.helloworld :as hw]
             [ch.codesmith.anvil.shell :as sh]
-            [clojure.tools.build.api :as b]
             [clojure.string :as str]
-            [ch.codesmith.anvil.helloworld :as hw]))
+            [clojure.test :refer [deftest is]]
+            [clojure.tools.build.api :as b]))
 
 (deftest nondir-full-name-correctness
   (is (= "a" (apps/nondir-full-name "a")))

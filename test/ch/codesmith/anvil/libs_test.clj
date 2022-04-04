@@ -1,12 +1,12 @@
 (ns ch.codesmith.anvil.libs-test
-  (:require [clojure.test :refer [deftest is]]
-            [ch.codesmith.anvil.libs :as libs]
-            [clojure.tools.build.api :as b]
-            [babashka.fs :as fs]
+  (:require [babashka.fs :as fs]
+            [ch.codesmith.anvil.basis :as ab]
             [ch.codesmith.anvil.helloworld :as hw]
+            [ch.codesmith.anvil.libs :as libs]
             [clojure.java.io :as io]
-            [ch.codesmith.anvil.basis :as ab])
-  (:import (java.util.zip ZipFile ZipEntry)))
+            [clojure.test :refer [deftest is]]
+            [clojure.tools.build.api :as b])
+  (:import (java.util.zip ZipEntry ZipFile)))
 
 (def lib 'ch.codesmith/anvil)
 (def version (str "0.2." (b/git-count-revs {})))
