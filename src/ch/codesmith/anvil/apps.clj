@@ -99,18 +99,20 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
 
 
 (def java-jdk-docker-base-images
-  {:java8  "openjdk:8u302-slim"
+  {:java8  "openjdk:8u322-slim"
    :java11 "openjdk:11.0.14-jdk-slim-buster"
    :java14 "openjdk:14.0.2-jdk-slim-buster"
    :java15 "openjdk:15.0.2-jdk-slim-buster"
    :java16 "openjdk:16.0.2-jdk-slim-buster"
-   :java17 "openjdk:17.0.2-jdk-slim-buster"})
+   :java17 "openjdk:17.0.2-jdk-slim-buster"
+   :java18 "openjdk:18-jdk"
+   :java19 "openjdk:19-jdk"})
 
 (def java-jre-docker-base-images
-  {:java8  "openjdk:8u312-jre-slim-buster"
-   :java11 "openjdk:11.0.13-jre-slim-buster"})
+  {:java8  "openjdk:8u322-jre-slim-buster"
+   :java11 "openjdk:11.0.14.1-jre-slim-buster"})
 
-(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220218T213206Z")
+(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220403T085258Z")
 
 (defmulti resolve-modules identity)
 
