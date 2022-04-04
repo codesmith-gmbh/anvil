@@ -8,7 +8,7 @@
 (def version (str "0." apps/anvil-epoch "." (b/git-count-revs {})))
 
 (defn verify []
-  (sh/sh! "./build/verify"))
+  (sh/sh! "./build/verify.sh"))
 
 (defn release [_]
   (verify)
