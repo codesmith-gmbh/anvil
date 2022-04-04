@@ -1,6 +1,6 @@
 (ns ch.codesmith.anvil.io
   (:require [clojure.java.io :as io])
-  (:import (java.nio.file Files OpenOption StandardOpenOption Path)))
+  (:import (java.nio.file Files OpenOption Path StandardOpenOption)))
 
 (extend Path
   io/IOFactory

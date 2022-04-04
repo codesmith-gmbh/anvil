@@ -1,7 +1,7 @@
 (ns ch.codesmith.anvil.pom
-  (:require [clojure.data.xml :as xml]
-            [clojure.tools.build.api :as b]
-            [babashka.fs :as fs]))
+  (:require [babashka.fs :as fs]
+            [clojure.data.xml :as xml]
+            [clojure.tools.build.api :as b]))
 
 (def pom-xmlns "http://maven.apache.org/POM/4.0.0")
 (xml/alias-uri 'pom pom-xmlns)

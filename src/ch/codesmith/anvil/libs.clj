@@ -1,12 +1,12 @@
 (ns ch.codesmith.anvil.libs
-  (:require [clojure.tools.build.api :as b]
-            [clojure.java.io :as io]
-            [deps-deploy.deps-deploy :as deploy]
-            [babashka.fs :as fs]
-            [ch.codesmith.anvil.pom :as pom]
-            ch.codesmith.anvil.io
+  (:require [babashka.fs :as fs]
             [ch.codesmith.anvil.basis :as ab]
-            [clojure.string :as str]))
+            [ch.codesmith.anvil.io]
+            [ch.codesmith.anvil.pom :as pom]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [clojure.tools.build.api :as b]
+            [deps-deploy.deps-deploy :as deploy]))
 
 (defn spit-version-file [{:keys [version dir]}]
   (let [file (io/file dir "version.edn")]

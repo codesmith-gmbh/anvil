@@ -9,7 +9,7 @@ io.github.codesmith-gmbh/anvil {:git/tag "v0.6.123" :git/sha "c052a96"}
 
 ## License
 
-Copyright © 2020-2021 Codesmith GmbH
+Copyright © 2020-2022 Codesmith GmbH
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

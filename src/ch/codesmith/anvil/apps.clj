@@ -1,14 +1,14 @@
 (ns ch.codesmith.anvil.apps
-  (:require [ch.codesmith.anvil.libs :as libs]
-            [clojure.java.io :as io]
-            [clojure.tools.build.api :as b]
-            [babashka.fs :as fs]
-            [buddy.core.hash :as hash]
+  (:require [babashka.fs :as fs]
             [buddy.core.codecs :as bc]
-            [com.rpl.specter :as sp]
+            [buddy.core.hash :as hash]
+            [ch.codesmith.anvil.basis :as ab]
+            [ch.codesmith.anvil.io]
+            [ch.codesmith.anvil.libs :as libs]
+            [clojure.java.io :as io]
             [clojure.string :as str]
-            ch.codesmith.anvil.io
-            [ch.codesmith.anvil.basis :as ab]))
+            [clojure.tools.build.api :as b]
+            [com.rpl.specter :as sp]))
 
 (def anvil-epoch 7)
 
