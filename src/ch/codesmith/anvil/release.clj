@@ -30,7 +30,7 @@
   (sh/sh! "git" "tag" "-s" (git-version-tag version) "-m" (str "\"" message " on version: " version \")))
 
 (defn git-commit-all! [message]
-  (when-not (not (git-clean?))
+  (when-not (git-clean?)
     (sh/sh! "git" "commit" "-am" message)))
 
 (defn git-push-all! []
