@@ -32,11 +32,10 @@ Hello
     (is (= changelog-after (slurp change-log-test-file)))))
 
 (defn test-update-readme [{:keys [before after artifact-type]}]
-  (let [update-readme (rel/update-readme {:deps-coords   'io.github.codesmith-gmbh/anvil
-                                          :git/tag       "v0.1.35"
-                                          :docker/tag    "image:0.1.15"
-                                          :version       "0.1.35"
-                                          :artifact-type artifact-type})]
+  (let [update-readme (rel/update-readme {:artifacts       [{:deps-coords   'io.github.codesmith-gmbh/anvil
+                                                             :artifact-type artifact-type}]
+                                          :docker-registry "image"
+                                          :version         "0.1.35"})]
     (is (= (update-readme before) after))))
 
 (deftest update-readme-correctness
@@ -69,7 +68,7 @@ docker pull ???
 "
                        :after         "# README
 ```deps
-docker pull image:0.1.15
+docker pull image/anvil:0.1.35
 ```
 "
                        :artifact-type :docker-image}))

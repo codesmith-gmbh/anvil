@@ -1,14 +1,15 @@
 {:paths ["src" "resources"]
- :deps  {org.clojure/clojure                  {:mvn/version "1.10.3"}
-         babashka/fs                          {:mvn/version "0.1.2"}
-         io.github.clojure/tools.build        {:git/tag "v0.7.7" :git/sha "1474ad6"}
+ :deps  {org.clojure/clojure                  {:mvn/version "1.11.0"}
+         babashka/fs                          {:mvn/version "0.1.4"}
+         io.github.clojure/tools.build        {:git/tag    "v0.8.1" :git/sha "7d40500"
+                                               :exclusions [org.slf4j/slf4j-nop]}
          io.github.codesmith-gmbh/deps-deploy {:git/sha "7af5bc5e3a6b0a7204ef697004495677e478f369"}
          buddy/buddy-core                     {:mvn/version "1.10.413"}
-         com.rpl/specter                      {:mvn/version "1.1.3"}
+         com.rpl/specter                      {:mvn/version "1.1.4"}
          ;; -- force some dependencies for nvd
          ch.codesmith/logger                  {:mvn/version "0.6.66"}
          org.apache.maven.wagon/wagon-http    {:mvn/version "3.5.1"}
-         com.google.guava/guava               {:mvn/version "31.0.1-jre"}
+         com.google.guava/guava               {:mvn/version "31.1-jre"}
          commons-io/commons-io                {:mvn/version "2.11.0"}}
  :aliases
  {:dev            {:extra-paths ["dev"]}
@@ -17,10 +18,7 @@
   :test-resources {:extra-paths ["test/test-resources"]}
   :test           {:extra-paths ["test"]
                    :extra-deps  {org.clojure/test.check {:mvn/version "1.1.1"}}}
-  :runner         {:extra-deps {lambdaisland/kaocha {:mvn/version "1.63.998"}}
+  :runner         {:extra-deps {lambdaisland/kaocha {:mvn/version "1.64.1010"}}
                    :main-opts  ["-m" "kaocha.runner"]}
-  :outdated       {:replace-deps {com.github.liquidz/antq {:mvn/version "1.5.0"}
-                                  org.slf4j/slf4j-simple  {:mvn/version "1.7.36"}}
-                   :main-opts    ["-m" "antq.core"]}
-  :clj-kondo      {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2022.02.09"}}
+  :clj-kondo      {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2022.03.09"}}
                    :main-opts    ["-m" "clj-kondo.main"]}}}

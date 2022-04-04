@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- Breaking change in git-release!: the shape artifact data has changed: more that 1 artifact possible.
+
 ## 0.6.123 (2022-03-11)
 
 ## 0.6.119 (2022-02-21)

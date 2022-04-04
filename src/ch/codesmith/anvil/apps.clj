@@ -10,7 +10,7 @@
             ch.codesmith.anvil.io
             [ch.codesmith.anvil.basis :as ab]))
 
-(def anvil-epoch 6)
+(def anvil-epoch 7)
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
@@ -210,10 +210,11 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
 (defn tag-base [docker-registry lib]
   (str (if docker-registry (str docker-registry "/") "") (name lib) ":"))
 
-(defn app-docker-tag [tag-base version]
-  (str tag-base version))
-
-
+(defn app-docker-tag
+  ([tag-base version]
+   (str tag-base version))
+  ([docker-registry lib version]
+   (app-docker-tag (tag-base docker-registry lib) version)))
 
 (defn lib-docker-tag [tag-base basis java-runtime]
   (let [serialized-libs (pr-str
@@ -293,8 +294,8 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
     (let [docker-app-dir (io/file target-dir "docker-app")
           app-dir        (io/file docker-app-dir "app")
           app-lib-dir    (io/file app-dir "lib")
-          app-tag        (str tag-base version)
-          latest-tag     (str tag-base "latest")]
+          app-tag        (app-docker-tag tag-base version)
+          latest-tag     (app-docker-tag tag-base "latest")]
       (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
       (b/copy-file {:src    jar-file
                     :target (str (io/file app-lib-dir (fs/file-name jar-file)))})

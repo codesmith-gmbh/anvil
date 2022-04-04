@@ -1,9 +1,9 @@
 (ns ch.codesmith.anvil.release
-  (:require [ch.codesmith.anvil.shell :as sh]
-            [clojure.string :as str]
-            ch.codesmith.anvil.io)
-  (:import (java.util.regex Pattern)
-           (java.time LocalDate)))
+  (:require [ch.codesmith.anvil.apps :as aa]
+            [ch.codesmith.anvil.io]
+            [ch.codesmith.anvil.shell :as sh]
+            [clojure.string :as str])
+  (:import (java.time LocalDate)))
 
 (defn git-clean? []
   (= (count (sh/sh "git" "status" "-s")) 0))
@@ -23,8 +23,11 @@
   (when-not (git-release-branch? release-branch-name)
     (throw (ex-info (str "Git is not on the release branch: " release-branch-name) {:release-branch-name release-branch-name}))))
 
-(defn git-tag-version! [tag version message]
-  (sh/sh! "git" "tag" "-s" tag "-m" (str "\"" message " on version: " version \")))
+(defn git-version-tag [version]
+  (str "v" version))
+
+(defn git-tag-version! [version message]
+  (sh/sh! "git" "tag" "-s" (git-version-tag version) "-m" (str "\"" message " on version: " version \")))
 
 (defn git-commit-all! [message]
   (when-not (not (git-clean?))
@@ -37,6 +40,9 @@
 (defn replace-in-file [file f]
   (spit file (f (slurp file))))
 
+(defn fcoalesce [f a1 a2]
+  (or (f a1)
+      (f a2)))
 
 (defn update-changelog-file [file {:keys [version local-date]}]
   (replace-in-file file
@@ -45,47 +51,46 @@
                                   #"(?m)^## Unreleased(.*)$"
                                   (str "## Unreleased\n\n## " version " (" local-date ")")))))
 
-(defmulti dependency-line :artifact-type)
+(defmulti dependency-line (fn [data artifact] (or (:artifact-type artifact) :deps)))
 
-(defmethod dependency-line :deps [{:keys [deps-coords git/tag]}]
-  (str deps-coords " {:git/tag \""
-       tag "\" :git/sha \""
-       (short-sha tag) "\"}"))
+(defmethod dependency-line :deps [data {:keys [deps-coords] :as artifact}]
+  (let [tag (git-version-tag (fcoalesce :version artifact data))]
+    (str deps-coords " {:git/tag \""
+         tag "\" :git/sha \""
+         (short-sha tag) "\"}")))
 
-(defmethod dependency-line :mvn [{:keys [deps-coords version]}]
-  (str deps-coords " {:mvn/version \"" version "\"}"))
+(defmethod dependency-line :mvn [data {:keys [deps-coords] :as artifact}]
+  (str deps-coords " {:mvn/version \"" (fcoalesce :version artifact data) "\"}"))
 
-(defmethod dependency-line :docker-image [{:keys [docker/tag]}]
-  (str "docker pull " tag))
+(defmethod dependency-line :docker-image [data {:keys [deps-coords] :as artifact}]
+  (let [docker-tag (aa/app-docker-tag (fcoalesce :docker-registry artifact data)
+                                      deps-coords
+                                      (fcoalesce :version artifact data))]
+    (str "docker pull " docker-tag)))
 
-(defn update-readme [data]
+(defn update-readme [{:keys [artifacts] :as data}]
   (fn [content]
     (str/replace-first
       content
       #"```deps.*(?s:.*?)```"
       (str "```deps\n"
-           (dependency-line data)
+           (str/join "\n"
+                     (map (partial dependency-line data)
+                          artifacts))
            "\n```"))))
 
 (defn default-update-for-release [data]
   (replace-in-file "README.md"
                    (update-readme data)))
 
-(defn git-release! [{:keys [deps-coords version release-branch-name artifact-type
-                            update-for-release]
-                     :or   {update-for-release default-update-for-release
-                            artifact-type      :deps}
+(defn git-release! [{:keys [release-branch-name update-for-release version]
+                     :or   {update-for-release default-update-for-release}
                      :as   data}]
   (check-released-allowed release-branch-name)
-  (let [tag (str "v" version)]
-    (update-changelog-file "CHANGELOG.md" {:version    version
-                                           :local-date (LocalDate/now)})
-    (git-commit-all! (str "CHANGELOG.md release " version))
-    (git-tag-version! tag version (str "Release " version " for " deps-coords))
-    (update-for-release {:deps-coords   deps-coords
-                         :git/tag       tag
-                         :docker/tag    (:docker/tag data)
-                         :version       version
-                         :artifact-type artifact-type})
-    (git-commit-all! "Update for release")
-    (git-push-all!)))
+  (update-changelog-file "CHANGELOG.md" {:version    version
+                                         :local-date (LocalDate/now)})
+  (git-commit-all! (str "CHANGELOG.md release " version))
+  (git-tag-version! version (str "Release " version))
+  (update-for-release data)
+  (git-commit-all! "Update for release")
+  (git-push-all!))

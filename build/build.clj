@@ -12,6 +12,6 @@
 
 (defn release [_]
   (verify)
-  (rel/git-release! {:deps-coords         lib
+  (rel/git-release! {:artifacts           [{:deps-coords lib}]
                      :version             version
                      :release-branch-name "master"}))
