@@ -20,16 +20,36 @@
       (str/replace ns "." "/"))
     (name lib)))
 
+(defn patch-basis-for-publication-one [{:keys [deps] :as basis} polylib version]
+  (if (contains? deps polylib)
+    (-> basis
+        (assoc-in [:deps polylib] {:mvn/version version})
+        (update-in [:libs polylib] (fn [lib]
+                                     (assoc
+                                       lib
+                                       :deps/manifest :mvn
+                                       :mvn/version version))))
+    basis))
+
+(defn patch-basis-for-publication [basis polylibs version]
+  (reduce #(patch-basis-for-publication-one %1 %2 version)
+          basis
+          polylibs))
+
 (defn jar ^String [{:keys [lib
                            version
                            basis
                            with-pom?
+                           polylibs
                            root
                            target-dir
                            description-data
                            clean?
                            aot]}]
   (let [basis     (or basis (ab/create-basis {:project (str (io/file root "deps.edn"))}))
+        basis     (if polylibs
+                    (patch-basis-for-publication basis polylibs version)
+                    basis)
         class-dir (str (io/file target-dir "classes"))
         src-dirs  (into []
                         (keep (fn [[lib {:keys [path-key]}]]

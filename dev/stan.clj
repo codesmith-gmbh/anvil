@@ -1,10 +1,6 @@
 (ns stan
   (:require [ch.codesmith.anvil.apps :as apps]
-            [ch.codesmith.anvil.basis :as ab]
-            [clojure.tools.build.api :as b]
-            [ch.codesmith.anvil.libs :as libs]
-            [clojure.data.xml :as xml]
-            [clojure.java.io :as io]))
+            [ch.codesmith.anvil.basis :as ab]))
 
 (comment
 
@@ -24,5 +20,7 @@
 
 
   (def basis (ab/create-basis {:project "deps.edn"}))
+
+  (keys basis)
 
   )
