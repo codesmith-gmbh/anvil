@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.7.140 (2022-04-18)
+
 ### Changed
 
 - Support for poly libraries
