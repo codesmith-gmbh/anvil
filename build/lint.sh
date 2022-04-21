@@ -12,6 +12,7 @@ fi
 
 (
   cd "${SCRIPT_DIR}"/.. || exit 1
+  rm -fr test/helloworld/target
   $CONDO_CMD --lint "$(clojure -A:test -Spath)" --parallel --dependencies --copy-configs
   $CONDO_CMD --lint "src:test"
 )
