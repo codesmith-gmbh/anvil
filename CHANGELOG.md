@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.8.145 (2022-04-21)
+
 ### Changed
 
 - better use of root-dir (with proper target-dir/class-dir resolution)
