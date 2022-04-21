@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.8.148 (2022-04-21)
+
 ### Changed
 
 - newer version of forked deps-deploy.
