@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- better use of root-dir (with proper target-dir/class-dir resolution)
+
+### Fixed
+
+- When package jars, use the root of the project as *project-root* in clojure deps to properly resolve relative paths.
+
 ## 0.7.140 (2022-04-18)
 
 ### Changed

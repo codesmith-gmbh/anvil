@@ -45,55 +45,59 @@
                            target-dir
                            description-data
                            clean?
-                           aot]}]
-  (let [basis     (or basis (ab/create-basis {:project (str (io/file root "deps.edn"))}))
-        basis     (if polylibs
-                    (patch-basis-for-publication basis polylibs version)
-                    basis)
-        class-dir (str (io/file target-dir "classes"))
-        src-dirs  (into []
-                        (keep (fn [[lib {:keys [path-key]}]]
-                                (and path-key (str (io/file root (name lib))))))
-                        (:classpath basis))
-        jar-file  (str (io/file target-dir (str (name lib) "-" version ".jar")))]
-    (when clean?
-      (b/delete {:path (str target-dir)}))
-    (when with-pom?
-      (pom/write-pom {:class-dir        class-dir
-                      :lib              lib
-                      :version          version
-                      :basis            basis
-                      :description-data description-data}))
-    (if aot
-      (binding [b/*project-root* (str (fs/absolutize root))]
-        (b/compile-clj (merge {:basis     basis
-                               :class-dir (str (fs/absolutize class-dir))
-                               :src-dirs  (into []
-                                                (map (comp str fs/absolutize))
-                                                src-dirs)}
-                              aot)))
-      (b/copy-dir {:src-dirs   src-dirs
-                   :target-dir class-dir}))
-    (spit-version-file {:version version
-                        :dir     (io/file class-dir
-                                          (lib-resources-dir lib))})
-    (b/jar {:class-dir class-dir
-            :jar-file  jar-file})
-    jar-file))
+                           aot]
+                    :or   {root "."}}]
+  (let [root (fs/absolutize root)]
+    (binding [b/*project-root* (str root)]
+      (let [target-dir (or target-dir (str (fs/path root "target")))
+            basis      (or basis (ab/create-basis {}))
+            basis      (if polylibs
+                         (patch-basis-for-publication basis polylibs version)
+                         basis)
+            class-dir  (str (io/file target-dir "classes"))
+            src-dirs   (into []
+                             (keep (fn [[lib {:keys [path-key]}]]
+                                     (and path-key (str (fs/path root (name lib))))))
+                             (:classpath basis))
+            jar-file   (str (io/file target-dir (str (name lib) "-" version ".jar")))]
+        (when clean?
+          (b/delete {:path (str target-dir)}))
+        (when with-pom?
+          (pom/write-pom {:class-dir        class-dir
+                          :lib              lib
+                          :version          version
+                          :basis            basis
+                          :description-data description-data}))
+        (if aot
+          (b/compile-clj (merge {:basis     basis
+                                 :class-dir (str (fs/absolutize class-dir))
+                                 :src-dirs  (into []
+                                                  (map (comp str fs/absolutize))
+                                                  src-dirs)}
+                                aot))
+          (b/copy-dir {:src-dirs   src-dirs
+                       :target-dir class-dir}))
+        (spit-version-file {:version version
+                            :dir     (io/file class-dir
+                                              (lib-resources-dir lib))})
+        (b/jar {:class-dir class-dir
+                :jar-file  jar-file})
+        jar-file))))
 
-(defn deploy [{:keys [jar-file pom-file target-dir class-dir lib
+(defn deploy [{:keys [jar-file pom-file root-dir target-dir class-dir lib
                       installer sign-releases?]
-               :or   {target-dir     "target"
-                      class-dir      "target/classes"
+               :or   {root-dir       "."
                       installer      :remote
                       sign-releases? true}}]
-  (let [pom-file (str (or pom-file
-                          (fs/path class-dir
-                                   "META-INF"
-                                   "maven"
-                                   (namespace lib)
-                                   (name lib)
-                                   "pom.xml")))]
+  (let [target-dir (or target-dir (str (fs/path root-dir "target")))
+        class-dir  (or class-dir (fs/path target-dir "classes"))
+        pom-file   (str (or pom-file
+                            (fs/path class-dir
+                                     "META-INF"
+                                     "maven"
+                                     (namespace lib)
+                                     (name lib)
+                                     "pom.xml")))]
     (deploy/deploy {:artifact       jar-file
                     :installer      installer
                     :pom-file       pom-file

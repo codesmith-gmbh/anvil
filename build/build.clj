@@ -5,7 +5,7 @@
             [ch.codesmith.anvil.apps :as apps]))
 
 (def lib 'io.github.codesmith-gmbh/anvil)
-(def version (str "0." apps/anvil-epoch "." (b/git-count-revs {})))
+(def version (str apps/anvil-epoch "." (b/git-count-revs {})))
 
 (defn verify []
   (sh/sh! "./build/verify.sh"))

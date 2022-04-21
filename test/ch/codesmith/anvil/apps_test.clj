@@ -3,7 +3,7 @@
             [ch.codesmith.anvil.helloworld :as hw]
             [ch.codesmith.anvil.shell :as sh]
             [clojure.string :as str]
-            [clojure.test :refer [deftest is]]
+            [clojure.test :refer [deftest is testing]]
             [clojure.tools.build.api :as b]))
 
 (deftest nondir-full-name-correctness
@@ -21,7 +21,6 @@
   (apps/docker-generator {:lib            lib
                           :version        version
                           :root           "."
-                          :target-dir     "target"
                           :aot            aot
                           :main-namespace "test"})
   (is true))
@@ -51,36 +50,40 @@
 (defn test-hello-world [aot]
   (let [docker-registry "localhost:5001"
         {:keys [app-docker-tag
-                lib-docker-tag]} (apps/docker-generator
-                                   (merge hw/base-properties
-                                          {:java-runtime         {:version         :java17
-                                                                  :type            :jre
-                                                                  :modules-profile :java.base}
-                                           :main-namespace       "hello"
-                                           :aot                  aot
-                                           :docker-registry      docker-registry
-                                           :docker-image-options {:exposed-ports [8000 1400]}}))
+                lib-docker-tag
+                app-docker-scripts]} (apps/docker-generator
+                                       (merge hw/base-properties
+                                              {:java-runtime         {:version         :java17
+                                                                      :type            :jre
+                                                                      :modules-profile :java.base}
+                                               :main-namespace       "hello"
+                                               :aot                  aot
+                                               :docker-registry      docker-registry
+                                               :docker-image-options {:exposed-ports [8000 1400]}}))
         port            5001]
+    (println app-docker-tag lib-docker-tag)
     (try
       ; 1. cleanup
       (rm-registry-images!)
       ; 2. startup local registry
       (start-registry! port)
       ; 3. build push pull run
-      (sh/sh! "./target/docker-app/docker-build.sh")
-      (sh/sh! "./target/docker-app/docker-push.sh")
+      (sh/sh! (str (:build app-docker-scripts)))
+      (sh/sh! (str (:push app-docker-scripts)))
       (docker-rmi! app-docker-tag)
       (sh/sh! "docker" "pull" app-docker-tag)
       (sh/sh! "docker" "run" "--rm" app-docker-tag)
       ; 4. build with lib in registry
       (docker-rmi! app-docker-tag)
       (docker-rmi! lib-docker-tag)
-      (sh/sh! "./target/docker-app/docker-build.sh")
+      (sh/sh! (str (:build app-docker-scripts)))
       ; 5. shut down local registry
       (finally
         (force-stop-registry!))))
   (is true))
 
 (deftest hello-world-correctness
-  (test-hello-world nil)
-  (test-hello-world {}))
+  (testing "without aot"
+    (test-hello-world nil))
+  (testing "with aot"
+    (test-hello-world {})))

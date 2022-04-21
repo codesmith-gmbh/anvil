@@ -57,9 +57,10 @@
                       "ch"
                       "codesmith-test"
                       "hello")]
+    (prn jar-file)
     (b/delete {:path (str m2-repo-dir)})
     (libs/deploy {:jar-file       jar-file
-                  :target-dir     hw/target-dir
+                  :root-dir       hw/root-dir
                   :installer      :local
                   :sign-releases? false
                   :lib            hw/lib})
