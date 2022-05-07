@@ -1,10 +1,10 @@
 {:paths ["src" "resources"]
  :deps  {org.clojure/clojure                  {:mvn/version "1.11.1"}
-         babashka/fs                          {:mvn/version "0.1.4"}
-         io.github.clojure/tools.build        {:git/tag    "v0.8.1" :git/sha "7d40500"
+         babashka/fs                          {:mvn/version "0.1.6"}
+         io.github.clojure/tools.build        {:git/tag    "v0.8.2" :git/sha "ba1a2bf"
                                                :exclusions [org.slf4j/slf4j-nop]}
-         org.clojure/tools.deps.alpha         {:mvn/version "0.14.1173"}
-         io.github.codesmith-gmbh/deps-deploy {:git/sha "2eb49fcb741d908a1655481ba6100ca8d5dfcc9c"}
+         org.clojure/tools.deps.alpha         {:mvn/version "0.14.1178"}
+         io.github.codesmith-gmbh/deps-deploy {:git/sha "0c29fda44f0b02f1048f4196e96aaa2a16167f56"}
          buddy/buddy-core                     {:mvn/version "1.10.413"}
          com.rpl/specter                      {:mvn/version "1.1.4"}
          ch.codesmith/logger                  {:mvn/version "0.6.71"}
@@ -19,7 +19,7 @@
   :test-resources {:extra-paths ["test/test-resources"]}
   :test           {:extra-paths ["test"]
                    :extra-deps  {org.clojure/test.check {:mvn/version "1.1.1"}}}
-  :runner         {:extra-deps {lambdaisland/kaocha {:mvn/version "1.65.1029"}}
+  :runner         {:extra-deps {lambdaisland/kaocha {:mvn/version "1.66.1034"}}
                    :main-opts  ["-m" "kaocha.runner"]}
-  :clj-kondo      {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2022.04.08"}}
+  :clj-kondo      {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2022.04.25"}}
                    :main-opts    ["-m" "clj-kondo.main"]}}}

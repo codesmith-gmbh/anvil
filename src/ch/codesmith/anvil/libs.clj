@@ -98,8 +98,9 @@
                                      (namespace lib)
                                      (name lib)
                                      "pom.xml")))]
-    (deploy/deploy {:artifact       jar-file
-                    :installer      installer
-                    :pom-file       pom-file
-                    :sign-releases? sign-releases?
-                    :target-dir     target-dir})))
+    (deploy/deploy {:artifact        jar-file
+                    :installer       installer
+                    :pom-file        pom-file
+                    :sign-releases?  sign-releases?
+                    :gpg-batch-mode? true
+                    :target-dir      target-dir})))
