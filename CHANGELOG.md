@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.8.151 (2022-05-07)
+
 - update dependencies.
 
 ## 0.8.148 (2022-04-21)
