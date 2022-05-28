@@ -1,0 +1,18 @@
+{:paths ["scripts"]
+ :tasks {clean    {:doc      "Cleans the project"
+                   :requires ([babashka.fs :as fs])
+                   :task     (doseq [dir ["." (fs/path "test" "helloworld")]]
+                               (fs/delete-tree (fs/path dir "target")))}
+         test     {:doc  "Runs the tests."
+                   :task sole/test-project}
+         lint     {:doc  "Lint the project with clj-kondo"
+                   :task sole/lint-project}
+         nvd      {:doc  "Checks for vulnerabilities."
+                   :task nvd/check-vulnerabilities}
+         verify   {:doc     "Verifies the project."
+                   :depends [lint nvd test]}
+         release  {:doc     "Release the next version"
+                   :depends [clean verify]
+                   :task    (clojure "-T:build release")}
+         outdated {:doc  "Check for outdated dependencies."
+                   :task sole/check-outdated-deps}}}

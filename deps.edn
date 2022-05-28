@@ -7,19 +7,14 @@
          io.github.codesmith-gmbh/deps-deploy {:git/sha "0c29fda44f0b02f1048f4196e96aaa2a16167f56"}
          buddy/buddy-core                     {:mvn/version "1.10.413"}
          com.rpl/specter                      {:mvn/version "1.1.4"}
-         ch.codesmith/logger                  {:mvn/version "0.6.71"}
+         ch.codesmith/logger                  {:mvn/version "0.6.76"}
          ;; -- force some dependencies for nvd
          org.apache.maven.wagon/wagon-http    {:mvn/version "3.5.1"}
          com.google.guava/guava               {:mvn/version "31.1-jre"}
          commons-io/commons-io                {:mvn/version "2.11.0"}}
  :aliases
- {:dev            {:extra-paths ["dev"]}
-  :build          {:extra-paths ["build"]
-                   :ns-default  build}
+ {:dev            {:extra-paths ["dev" "scripts"]}
+  :build          {:extra-paths ["build"]}
   :test-resources {:extra-paths ["test/test-resources"]}
   :test           {:extra-paths ["test"]
-                   :extra-deps  {org.clojure/test.check {:mvn/version "1.1.1"}}}
-  :runner         {:extra-deps {lambdaisland/kaocha {:mvn/version "1.66.1034"}}
-                   :main-opts  ["-m" "kaocha.runner"]}
-  :clj-kondo      {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2022.04.25"}}
-                   :main-opts    ["-m" "clj-kondo.main"]}}}
+                   :extra-deps  {org.clojure/test.check {:mvn/version "1.1.1"}}}}}
