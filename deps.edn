@@ -14,7 +14,8 @@
          commons-io/commons-io                {:mvn/version "2.11.0"}}
  :aliases
  {:dev            {:extra-paths ["dev" "scripts"]}
-  :build          {:extra-paths ["build"]}
+  :build          {:extra-paths ["build"]
+                   :ns-default  build}
   :test-resources {:extra-paths ["test/test-resources"]}
   :test           {:extra-paths ["test"]
                    :extra-deps  {org.clojure/test.check {:mvn/version "1.1.1"}}}}}
