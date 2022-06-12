@@ -112,7 +112,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
   {:java8  "openjdk:8u322-jre-slim-buster"
    :java11 "openjdk:11.0.14.1-jre-slim-buster"})
 
-(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220528T212248Z")
+(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220611T211102Z")
 
 (defmulti resolve-modules identity)
 
