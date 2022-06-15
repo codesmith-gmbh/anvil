@@ -4,7 +4,6 @@
             [buddy.core.hash :as hash]
             [ch.codesmith.anvil.basis :as ab]
             [ch.codesmith.anvil.io]
-            [clojure.tools.build.api :as api]
             [ch.codesmith.anvil.libs :as libs]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -267,7 +266,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
                                               :type            :jlink
                                               :modules-profile :anvil}}}]
   (let [root (fs/absolutize (fs/path (or root ".")))]
-    (binding [api/*project-root* (str root)]
+    (binding [b/*project-root* (str root)]
       (let [basis                   (or basis (ab/create-basis {}))
             target-dir              (str (or target-dir (fs/path root "target")))
             ; 1. create the jar file for the project
