@@ -54,7 +54,7 @@
                 app-docker-scripts]} (apps/docker-generator
                                        (merge hw/base-properties
                                               {:java-runtime         {:version         :java17
-                                                                      :type            :jre
+                                                                      :type            :jlink
                                                                       :modules-profile :java.base}
                                                :main-namespace       "hello"
                                                :aot                  aot

@@ -4,6 +4,7 @@
             [buddy.core.hash :as hash]
             [ch.codesmith.anvil.basis :as ab]
             [ch.codesmith.anvil.io]
+            [clojure.tools.build.api :as api]
             [ch.codesmith.anvil.libs :as libs]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -148,11 +149,14 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
       (= type :jre) (if-let [docker-base-image (version java-jre-docker-base-images)]
                       {:docker-image-type :simple-image
                        :docker-base-image docker-base-image}
-                      {:docker-image-type         :jlink-image
+                      (throw (ex-info (str "no jre images for java version " version)
+                                      {:version      version
+                                       :java-runtime runtime})))
+      (= type :jlink) {:docker-image-type         :jlink-image
                        :docker-jdk-base-image     (or docker-jdk-base-image (version java-jdk-docker-base-images))
                        :docker-runtime-base-image (or docker-runtime-base-image default-runtime-base-image)
                        :modules                   (into (resolve-modules modules-profile)
-                                                        extra-modules)})
+                                                        extra-modules)}
       :else (throw (ex-info "cannot resolve java runtime" {:java-runtime runtime})))
     :version version
     :java-opts java-opts))
@@ -260,46 +264,47 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
                                 description-data
                                 aot]
                          :or   {java-runtime {:version         :java17
-                                              :type            :jre
+                                              :type            :jlink
                                               :modules-profile :anvil}}}]
-  (let [root                    (fs/absolutize (fs/path (or root ".")))
-        basis                   (or basis (ab/create-basis {}))
-        target-dir              (str (or target-dir (fs/path root "target")))
-        ; 1. create the jar file for the project
-        jar-file                (libs/jar {:lib              lib
-                                           :version          version
-                                           :with-pom?        false
-                                           :root             (str root)
-                                           :basis            basis
-                                           :target-dir       target-dir
-                                           :description-data description-data
-                                           :clean?           true
-                                           :aot              aot})
-        tag-base                (tag-base docker-registry lib)
-        java-runtime            (resolve-java-runtime java-runtime)
-        lib-docker-tag          (lib-docker-tag tag-base basis java-runtime)
-        docker-lib-dir          (io/file target-dir "docker-lib")
-        lib-docker-build-script (generate-docker-script {:target-path docker-lib-dir
-                                                         :script-name "docker-build.sh"
-                                                         :body        (docker-build-body lib-docker-tag)})
-        lib-docker-push-script  (generate-docker-script {:target-path docker-lib-dir
-                                                         :script-name "docker-push.sh"
-                                                         :body        (docker-push-body lib-docker-tag)})]
-    ; 2. create the docker lib folder
-    (copy-lib-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
-    (lib-dockerfile {:target-path  docker-lib-dir
-                     :java-runtime java-runtime})
-    ; 3. create the docker app folder
-    (let [docker-app-dir          (io/file target-dir "docker-app")
-          app-dir                 (io/file docker-app-dir "app")
-          app-lib-dir             (io/file app-dir "lib")
-          app-tag                 (app-docker-tag tag-base version)
-          latest-tag              (app-docker-tag tag-base "latest")
-          app-docker-build-script (generate-docker-script {:target-path docker-app-dir
-                                                           :script-name "docker-build.sh"
-                                                           :body        (str
-                                                                          "
-         if docker image inspect " lib-docker-tag " >/dev/null; then
+  (let [root (fs/absolutize (fs/path (or root ".")))]
+    (binding [api/*project-root* (str root)]
+      (let [basis                   (or basis (ab/create-basis {}))
+            target-dir              (str (or target-dir (fs/path root "target")))
+            ; 1. create the jar file for the project
+            jar-file                (libs/jar {:lib              lib
+                                               :version          version
+                                               :with-pom?        false
+                                               :root             (str root)
+                                               :basis            basis
+                                               :target-dir       target-dir
+                                               :description-data description-data
+                                               :clean?           true
+                                               :aot              aot})
+            tag-base                (tag-base docker-registry lib)
+            java-runtime            (resolve-java-runtime java-runtime)
+            lib-docker-tag          (lib-docker-tag tag-base basis java-runtime)
+            docker-lib-dir          (io/file target-dir "docker-lib")
+            lib-docker-build-script (generate-docker-script {:target-path docker-lib-dir
+                                                             :script-name "docker-build.sh"
+                                                             :body        (docker-build-body lib-docker-tag)})
+            lib-docker-push-script  (generate-docker-script {:target-path docker-lib-dir
+                                                             :script-name "docker-push.sh"
+                                                             :body        (docker-push-body lib-docker-tag)})]
+        ; 2. create the docker lib folder
+        (copy-lib-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
+        (lib-dockerfile {:target-path  docker-lib-dir
+                         :java-runtime java-runtime})
+        ; 3. create the docker app folder
+        (let [docker-app-dir          (io/file target-dir "docker-app")
+              app-dir                 (io/file docker-app-dir "app")
+              app-lib-dir             (io/file app-dir "lib")
+              app-tag                 (app-docker-tag tag-base version)
+              latest-tag              (app-docker-tag tag-base "latest")
+              app-docker-build-script (generate-docker-script {:target-path docker-app-dir
+                                                               :script-name "docker-build.sh"
+                                                               :body        (str
+                                                                              "
+             if docker image inspect " lib-docker-tag " >/dev/null; then
    echo \"The base image " lib-docker-tag "  exists\"
 else
    echo \"The base image " lib-docker-tag " does not exists locally; pulling\"
@@ -311,32 +316,32 @@ else
    fi
 fi
 "
-                                                                          (docker-build-body app-tag)
-                                                                          (str "\ndocker tag " app-tag " " latest-tag))})
-          app-docker-push-script  (generate-docker-script {:target-path docker-app-dir
-                                                           :script-name "docker-push.sh"
-                                                           :body
-                                                           (str/join "\n"
-                                                                     ["../docker-lib/docker-push.sh"
-                                                                      (docker-push-body app-tag)
-                                                                      (docker-push-body latest-tag)])})]
-      (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
-      (b/copy-file {:src    jar-file
-                    :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
-      (libs/spit-version-file {:version version
-                               :dir     app-dir})
-      (generate-app-run-script {:target         app-dir
-                                :main-namespace main-namespace})
-      (app-dockerfile {:target-path            docker-app-dir
-                       :java-version           (:version java-runtime)
-                       :docker-base-image-name lib-docker-tag
-                       :version                version
-                       :exposed-ports          (:exposed-ports docker-image-options)
-                       :jar-file               jar-file
-                       :java-opts              (:java-opts java-runtime)})
-      {:app-docker-tag     app-tag
-       :lib-docker-tag     lib-docker-tag
-       :lib-docker-scripts {:build lib-docker-build-script
-                            :push  lib-docker-push-script}
-       :app-docker-scripts {:build app-docker-build-script
-                            :push  app-docker-push-script}})))
+                                                                              (docker-build-body app-tag)
+                                                                              (str "\ndocker tag " app-tag " " latest-tag))})
+              app-docker-push-script  (generate-docker-script {:target-path docker-app-dir
+                                                               :script-name "docker-push.sh"
+                                                               :body
+                                                               (str/join "\n"
+                                                                         ["../docker-lib/docker-push.sh"
+                                                                          (docker-push-body app-tag)
+                                                                          (docker-push-body latest-tag)])})]
+          (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
+          (b/copy-file {:src    jar-file
+                        :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
+          (libs/spit-version-file {:version version
+                                   :dir     app-dir})
+          (generate-app-run-script {:target         app-dir
+                                    :main-namespace main-namespace})
+          (app-dockerfile {:target-path            docker-app-dir
+                           :java-version           (:version java-runtime)
+                           :docker-base-image-name lib-docker-tag
+                           :version                version
+                           :exposed-ports          (:exposed-ports docker-image-options)
+                           :jar-file               jar-file
+                           :java-opts              (:java-opts java-runtime)})
+          {:app-docker-tag     app-tag
+           :lib-docker-tag     lib-docker-tag
+           :lib-docker-scripts {:build lib-docker-build-script
+                                :push  lib-docker-push-script}
+           :app-docker-scripts {:build app-docker-build-script
+                                :push  app-docker-push-script}})))))
