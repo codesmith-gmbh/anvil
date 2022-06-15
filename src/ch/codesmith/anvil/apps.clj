@@ -10,7 +10,7 @@
             [clojure.tools.build.api :as b]
             [com.rpl.specter :as sp]))
 
-(def anvil-epoch "0.8")
+(def anvil-epoch "0.9")
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
@@ -97,22 +97,18 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
             "\n"))
     (make-executable script-path)))
 
-
 (def java-jdk-docker-base-images
-  {:java8  "openjdk:8u322-slim"
-   :java11 "openjdk:11.0.14-jdk-slim-buster"
-   :java14 "openjdk:14.0.2-jdk-slim-buster"
-   :java15 "openjdk:15.0.2-jdk-slim-buster"
-   :java16 "openjdk:16.0.2-jdk-slim-buster"
-   :java17 "openjdk:17.0.2-jdk-slim-buster"
-   :java18 "openjdk:18-jdk"
-   :java19 "openjdk:19-jdk"})
+  {:java8  "eclipse-temurin:8u322-slim"
+   :java11 "eclipse-temurin:11.0.15_10-jre-jammy"
+   :java17 "eclipse-temurin:17.0.3_7-jdk-jammy"
+   :java18 "eclipse-temurin:18.0.1_10-jdk-jammy"})
 
 (def java-jre-docker-base-images
-  {:java8  "openjdk:8u322-jre-slim-buster"
-   :java11 "openjdk:11.0.14.1-jre-slim-buster"})
+  {:java8  "eclipse-temurin:8u332-b09-jre-jammy"
+   :java11 "eclipse-temurin:11.0.15_10-jre-jammy"
+   :java17 "eclipse-temurin:17.0.3_7-jre-jammy"})
 
-(def default-runtime-base-image "bitnami/minideb:buster-snapshot-20220611T211102Z")
+(def default-runtime-base-image "ubuntu:jammy-20220531")
 
 (defmulti resolve-modules identity)
 
