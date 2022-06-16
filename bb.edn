@@ -13,6 +13,6 @@
                    :depends [lint nvd test]}
          release  {:doc     "Release the next version"
                    :depends [clean verify]
-                   :task    (clojure "-T:build release")}
+                   :task    (clojure "-X:build release")}
          outdated {:doc  "Check for outdated dependencies."
                    :task sole/check-outdated-deps}}}
