@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file. This change
 
 - add Implementation-Version to the jar manifest.
 
+### Changed
+
+- updated to org.clojure/tools.deps.alpha 0.14.1212
+
 ## 0.9.163 (2022-06-16)
 
 ## 0.8.151 (2022-05-07)
