@@ -81,7 +81,8 @@
                             :dir     (io/file class-dir
                                               (lib-resources-dir lib))})
         (b/jar {:class-dir class-dir
-                :jar-file  jar-file})
+                :jar-file  jar-file
+                :manifest  {"Implementation-Version" version}})
         jar-file))))
 
 (defn deploy [{:keys [jar-file pom-file root-dir target-dir class-dir lib

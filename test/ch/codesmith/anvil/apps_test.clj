@@ -56,7 +56,7 @@
                                               {:java-runtime         {:version         :java17
                                                                       :type            :jlink
                                                                       :modules-profile :java.base}
-                                               :main-namespace       "hello"
+                                               :main-namespace       "test.hello"
                                                :aot                  aot
                                                :docker-registry      docker-registry
                                                :docker-image-options {:exposed-ports [8000 1400]}}))
