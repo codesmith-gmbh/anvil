@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file. This change
 
 ### Added
 
-- add Implementation-Version to the jar manifest.
+- add `Implementation-Version` to the jar manifest.
+- apps: new `:clj-runtime` keyword for apps; replacing `:main-namespace` for more clojure runtime settings.
+- apps: possibility to configure the run script in docker artifacts via the multimethod `apps/clj-run-script` and the keyword `:script-type` in the `:clj-runtime` map.
+- apps: 2 values for `:script-type` if the `:clj-runtime` map:
+  - `:clojure.main`: for invocation of the `:main-namespace` via clojure.main
+  - `:class`: for invocation via an AOTed gen-class namespace.
 
 ### Changed
 

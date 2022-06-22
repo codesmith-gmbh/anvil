@@ -1,4 +1,5 @@
-(ns test.hello)
+(ns test.hello
+  (:gen-class))
 
 (defn -main [& _]
   (prn {:version-file           (slurp "/app/version.edn")

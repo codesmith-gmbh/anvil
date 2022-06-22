@@ -47,7 +47,7 @@
   (doseq [image (registry-images)]
     (docker-rmi! image)))
 
-(defn test-hello-world [aot]
+(defn test-hello-world [aot script-type]
   (let [docker-registry "localhost:5001"
         {:keys [app-docker-tag
                 lib-docker-tag
@@ -56,7 +56,8 @@
                                               {:java-runtime         {:version         :java17
                                                                       :type            :jlink
                                                                       :modules-profile :java.base}
-                                               :main-namespace       "test.hello"
+                                               :clj-runtime          {:main-namespace "test.hello"
+                                                                      :script-type    script-type}
                                                :aot                  aot
                                                :docker-registry      docker-registry
                                                :docker-image-options {:exposed-ports [8000 1400]}}))
@@ -83,7 +84,16 @@
   (is true))
 
 (deftest hello-world-correctness
-  (testing "without aot"
-    (test-hello-world nil))
-  (testing "with aot"
-    (test-hello-world {})))
+  (testing "without aot / clojure.main"
+    (test-hello-world nil :clojure.main))
+  (testing "with aot / clojure.main"
+    (test-hello-world {} :clojure.main))
+  (testing "with aot / class"
+    (test-hello-world {} :class)))
+
+(deftest hello-world-completeness
+  (testing "without aot / class"
+    (is (thrown-with-msg?
+          Exception
+          #"using the script-type `:class` requires AOT compilation, however :aot is not defined"
+          (test-hello-world nil :class)))))

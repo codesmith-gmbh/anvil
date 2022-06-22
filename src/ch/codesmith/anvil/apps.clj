@@ -5,12 +5,15 @@
             [ch.codesmith.anvil.basis :as ab]
             [ch.codesmith.anvil.io]
             [ch.codesmith.anvil.libs :as libs]
+            [ch.codesmith.logger :as log]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
             [com.rpl.specter :as sp]))
 
-(def anvil-epoch "0.9")
+(log/deflogger)
+
+(def anvil-epoch "0.10")
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
@@ -84,17 +87,30 @@
 (defn make-executable [f]
   (fs/set-posix-file-permissions f "rwxr-xr-x"))
 
-(defn generate-app-run-script [{:keys [target main-namespace]}]
+(defn default-run-script [& args]
+  (str
+    "#!/bin/bash
+DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
+java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" "
+    (str/join " " args)
+    "\n"))
+
+(defmulti clj-run-script :script-type)
+
+(defmethod clj-run-script :clojure.main
+  [{:keys [main-namespace]}]
+  (default-run-script "clojure.main -m" main-namespace))
+
+(defmethod clj-run-script :class
+  [{:keys [main-namespace]}]
+  (default-run-script main-namespace))
+
+(defn generate-app-run-script [{:keys [target clj-runtime]}]
   (let [bin-dir-path (fs/path target "bin")
         script-path  (fs/path bin-dir-path "run.sh")]
     (fs/create-dirs bin-dir-path)
     (spit script-path
-          (str
-            "#!/bin/bash
-DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
-java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.main -m "
-            main-namespace
-            "\n"))
+          (clj-run-script clj-runtime))
     (make-executable script-path)))
 
 (def java-jdk-docker-base-images
@@ -257,6 +273,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
                                 basis
                                 target-dir
                                 main-namespace
+                                clj-runtime
                                 java-runtime
                                 docker-image-options
                                 docker-registry
@@ -265,7 +282,19 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" clojure.m
                          :or   {java-runtime {:version         :java17
                                               :type            :jlink
                                               :modules-profile :anvil}}}]
-  (let [root (fs/absolutize (fs/path (or root ".")))]
+  (when (and main-namespace clj-runtime)
+    (throw (ex-info (str "only one of :main-namespace or :clj-runtime may be specified")
+                    {:main-namespace main-namespace
+                     :clj-runtime    clj-runtime})))
+  (when main-namespace
+    (log/warn-c {:main-namespace main-namespace} "Use of :main-namespace is deprecated, use :clj-runtime instead"))
+  (when (and (= (:script-type clj-runtime) :class)
+             (not aot))
+    (throw (ex-info (str "using the script-type `:class` requires AOT compilation, however :aot is not defined") {})))
+  (let [clj-runtime (or clj-runtime
+                        {:main-namespace main-namespace
+                         :script-type    :clojure.main})
+        root        (fs/absolutize (fs/path (or root ".")))]
     (binding [b/*project-root* (str root)]
       (let [basis                   (or basis (ab/create-basis {}))
             target-dir              (str (or target-dir (fs/path root "target")))
@@ -329,8 +358,8 @@ fi
                         :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
           (libs/spit-version-file {:version version
                                    :dir     app-dir})
-          (generate-app-run-script {:target         app-dir
-                                    :main-namespace main-namespace})
+          (generate-app-run-script {:target      app-dir
+                                    :clj-runtime clj-runtime})
           (app-dockerfile {:target-path            docker-app-dir
                            :java-version           (:version java-runtime)
                            :docker-base-image-name lib-docker-tag
