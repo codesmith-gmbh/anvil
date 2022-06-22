@@ -2,7 +2,7 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as ps]))
 
-(def deps '{:aliases {:runner {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.66.1034"}
+(def deps '{:aliases {:runner {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.68.1059"}
                                             org.slf4j/slf4j-simple {:mvn/version "1.7.36"}}}}})
 
 (defn run-tests [directory]
