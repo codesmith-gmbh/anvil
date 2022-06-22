@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.10.169 (2022-06-22)
+
 ### Added
 
 - add `Implementation-Version` to the jar manifest.
