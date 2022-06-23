@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.10.172 (2022-06-23)
+
 ### Fixed
 
 - copy resources with aot compiling.
