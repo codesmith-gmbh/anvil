@@ -68,15 +68,15 @@
                           :version          version
                           :basis            basis
                           :description-data description-data}))
-        (if aot
+        (b/copy-dir {:src-dirs   src-dirs
+                     :target-dir class-dir})
+        (when aot
           (b/compile-clj (merge {:basis     basis
                                  :class-dir (str (fs/absolutize class-dir))
                                  :src-dirs  (into []
                                                   (map (comp str fs/absolutize))
                                                   src-dirs)}
-                                aot))
-          (b/copy-dir {:src-dirs   src-dirs
-                       :target-dir class-dir}))
+                                aot)))
         (spit-version-file {:version version
                             :dir     (io/file class-dir
                                               (lib-resources-dir lib))})

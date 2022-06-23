@@ -2,6 +2,7 @@
   (:require [ch.codesmith.anvil.apps :as apps]
             [ch.codesmith.anvil.helloworld :as hw]
             [ch.codesmith.anvil.shell :as sh]
+            [clojure.edn :as edn]
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [clojure.tools.build.api :as b]))
@@ -24,7 +25,6 @@
                           :aot            aot
                           :main-namespace "test"})
   (is true))
-
 
 (deftest docker-generator-correctness
   (test-docker-generator nil)
@@ -73,15 +73,19 @@
       (sh/sh! (str (:push app-docker-scripts)))
       (docker-rmi! app-docker-tag)
       (sh/sh! "docker" "pull" app-docker-tag)
-      (sh/sh! "docker" "run" "--rm" app-docker-tag)
+      (let [out       (sh/sh "docker" "run" "--rm" app-docker-tag)
+            last-line (last (str/split-lines out))
+            {:keys [resource version-file implementation-version]} (edn/read-string last-line)]
+        (is (= version-file {:version version}))
+        (is (= implementation-version (if aot version "undefined")))
+        (is (= resource (str "jar:file:/app/lib/hello-" version ".jar!/resource.edn"))))
       ; 4. build with lib in registry
       (docker-rmi! app-docker-tag)
       (docker-rmi! lib-docker-tag)
       (sh/sh! (str (:build app-docker-scripts)))
       ; 5. shut down local registry
       (finally
-        (force-stop-registry!))))
-  (is true))
+        (force-stop-registry!)))))
 
 (deftest hello-world-correctness
   (testing "without aot / clojure.main"
