@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Fixed
+
+- apps: put app jar(s) first in the class path for resource loading
+
+### Changed
+
+- apps: put the libraries in '/lib/anvil' instead of '/lib'
+
 ## 0.10.172 (2022-06-23)
 
 ### Fixed

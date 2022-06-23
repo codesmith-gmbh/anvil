@@ -91,7 +91,7 @@
   (str
     "#!/bin/bash
 DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
-java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" "
+java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
     (str/join " " args)
     "\n"))
 
@@ -205,7 +205,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" "
 
 (defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
   (str "FROM " docker-base-image "\n"
-       "COPY /lib/ /lib/\n"))
+       "COPY /lib/ /lib/anvil/\n"))
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
                                       docker-runtime-base-image
@@ -215,7 +215,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/lib/*:${DIR}/../lib/*\" "
        "FROM " docker-runtime-base-image "\n"
        "COPY --from=0 /tmp/jre /jre\n"
        "ENV PATH=/jre/bin:$PATH\n"
-       "COPY /lib/ /lib/\n"))
+       "COPY /lib/ /lib/anvil/\n"))
 
 (defn lib-dockerfile [{:keys [target-path java-runtime]}]
   (println "Creating the Lib Dockerfile")
