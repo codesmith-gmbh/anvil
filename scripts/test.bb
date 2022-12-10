@@ -2,8 +2,8 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as ps]))
 
-(def deps '{:aliases {:runner {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.70.1086"}
-                                            org.slf4j/slf4j-simple {:mvn/version "2.0.2"}}}}})
+(def deps '{:aliases {:runner {:extra-deps {lambdaisland/kaocha    {:mvn/version "1.71.1119"}
+                                            org.slf4j/slf4j-simple {:mvn/version "2.0.5"}}}}})
 
 (defn run-tests [directory]
   (when (fs/exists? (fs/path directory "tests.edn"))

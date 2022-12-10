@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- bump dependencies
+
 ## 0.10.177 (2022-09-26)
 
 ### Fixed

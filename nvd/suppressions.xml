@@ -14,4 +14,32 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework\.build/aws\-maven@.*$</packageUrl>
         <cve>CVE-2016-1000027</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: commons-codec-1.15.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/commons\-codec/commons\-codec@.*$</packageUrl>
+        <cpe>cpe:/a:apache:commons_net</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: commons-io-2.11.0.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/commons\-io/commons\-io@.*$</packageUrl>
+        <cpe>cpe:/a:apache:commons_net</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: commons-logging-1.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/commons\-logging/commons\-logging@.*$</packageUrl>
+        <cpe>cpe:/a:apache:commons_net</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jcl-over-slf4j-1.7.36.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.slf4j/jcl\-over\-slf4j@.*$</packageUrl>
+        <cpe>cpe:/a:apache:commons_net</cpe>
+    </suppress>
 </suppressions>

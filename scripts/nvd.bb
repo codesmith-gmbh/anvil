@@ -3,7 +3,7 @@
             [babashka.process :as ps]))
 
 (defn dev-classpath []
-  (-> (ps/process ["clojure" "-A:dev:libs-dev" "-Spath"] {:out :string})
+  (-> (ps/process ["clojure" "-A:dev" "-Spath"] {:out :string})
       ps/check
       :out))
 

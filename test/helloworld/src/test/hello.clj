@@ -3,7 +3,7 @@
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]))
 
-(defn -main [& _]
+#_:clj-kondo/ignore (defn -main [& _]
   (prn {:resource               (str (io/resource "resource.edn"))
         :version-file           (edn/read-string (slurp "/app/version.edn"))
         :implementation-version (try (some-> (Class/forName "test.hello__init")
