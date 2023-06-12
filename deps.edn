@@ -1,19 +1,20 @@
 {:paths ["src" "resources"]
  :deps  {org.clojure/clojure                  {:mvn/version "1.11.1"}
-         babashka/fs                          {:mvn/version "0.2.12"}
-         io.github.clojure/tools.build        {:git/tag    "v0.8.5" :git/sha "9c738da"
-                                               :exclusions [org.slf4j/slf4j-nop]}
+         babashka/fs                          {:mvn/version "0.4.19"}
+         io.github.clojure/tools.build        {:mvn/version "0.9.4"
+                                               :exclusions  [org.slf4j/slf4j-nop]}
          org.clojure/tools.deps.alpha         {:mvn/version "0.15.1254"}
          io.github.codesmith-gmbh/deps-deploy {:git/sha "87c3b5f17ea6bc455fcd19dc27c8d41ed86bd77d"}
-         buddy/buddy-core                     {:mvn/version "1.10.413"}
+         buddy/buddy-core                     {:mvn/version "1.11.418"}
          com.rpl/specter                      {:mvn/version "1.1.4"}
-         ch.codesmith/logger                  {:mvn/version "0.7.104"}
+         ch.codesmith/logger                  {:mvn/version "0.7.108"}
          org.clojure/data.xml                 {:mvn/version "0.2.0-alpha8"}
          ;; -- force some dependencies for nvd
-         com.google.guava/guava               {:mvn/version "31.1-jre"}
-         com.amazonaws/aws-java-sdk-s3        {:mvn/version "1.12.362"}
-         com.amazonaws/aws-java-sdk-sts       {:mvn/version "1.12.362"}
-         commons-io/commons-io                {:mvn/version "2.11.0"}}
+         com.google.guava/guava               {:mvn/version "32.0.1-jre"}
+         com.amazonaws/aws-java-sdk-s3        {:mvn/version "1.12.486"}
+         com.amazonaws/aws-java-sdk-sts       {:mvn/version "1.12.486"}
+         commons-io/commons-io                {:mvn/version "2.13.0"}
+         com.cognitect/http-client            {:mvn/version "1.0.125"}}
  :aliases
  {:dev            {:extra-paths ["dev" "scripts"]}
   :build          {:extra-paths ["build"]

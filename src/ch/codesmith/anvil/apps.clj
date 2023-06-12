@@ -114,18 +114,19 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
     (make-executable script-path)))
 
 (def java-jdk-docker-base-images
-  {:java8  "eclipse-temurin:8u352-b08-jdk-jammy"
-   :java11 "eclipse-temurin:11.0.16.1_1-jdk-jammy"
-   :java17 "eclipse-temurin:17.0.5_8-jdk-jammy"
+  {:java8  "eclipse-temurin:8u372-b07-jdk-jammy"
+   :java11 "eclipse-temurin:11.0.19_7-jdk-jammy"
+   :java17 "eclipse-temurin:17.0.7_7-jdk-jammy"
    :java18 "eclipse-temurin:18.0.2.1_1-jdk-jammy"
-   :java19 "eclipse-temurin:19.0.1_10-jre-jammy"})
+   :java19 "eclipse-temurin:19.0.1_10-jre-jammy"
+   :java20 "eclipse-temurin:20.0.1_9-jdk-jammy"})
 
 (def java-jre-docker-base-images
-  {:java8  "eclipse-temurin:8u352-b08-jre-jammy"
-   :java11 "eclipse-temurin:11.0.17_8-jre-jammy"
-   :java17 "eclipse-temurin:17.0.5_8-jre-jammy"})
+  {:java8  "eclipse-temurin:8u372-b07-jre-jammy"
+   :java11 "eclipse-temurin:11.0.19_7-jre-jammy"
+   :java17 "eclipse-temurin:17.0.7_7-jre-jammy"})
 
-(def default-runtime-base-image "ubuntu:jammy-20220815")
+(def default-runtime-base-image "ubuntu:jammy-20230522")
 
 (defmulti resolve-modules identity)
 
