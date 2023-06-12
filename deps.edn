@@ -4,7 +4,7 @@
          io.github.clojure/tools.build        {:mvn/version "0.9.4"
                                                :exclusions  [org.slf4j/slf4j-nop]}
          org.clojure/tools.deps.alpha         {:mvn/version "0.15.1254"}
-         io.github.codesmith-gmbh/deps-deploy {:git/sha "87c3b5f17ea6bc455fcd19dc27c8d41ed86bd77d"}
+         io.github.codesmith-gmbh/deps-deploy {:git/sha "efefff512fda085e7518c87927cad185c7161206"}
          buddy/buddy-core                     {:mvn/version "1.11.418"}
          com.rpl/specter                      {:mvn/version "1.1.4"}
          ch.codesmith/logger                  {:mvn/version "0.7.108"}
