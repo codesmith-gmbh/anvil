@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.10.187 (2023-08-20)
+
 ## 0.10.185 (2023-08-20)
 
 ### Changed
