@@ -67,7 +67,7 @@ docker pull ???
 "
                        :after         "# README
 ```deps
-docker pull image/anvil:0.1.35
+docker pull image/io.github.codesmith-gmbh/anvil:0.1.35
 ```
 "
                        :artifact-type :docker-image}))
