@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.10.192 (2023-08-21)
+
 ### Fixed
 
 - use full name (namespace + name) for docker image tags.
