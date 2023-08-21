@@ -42,4 +42,18 @@
         <packageUrl regex="true">^pkg:maven/org\.slf4j/jcl\-over\-slf4j@.*$</packageUrl>
         <cpe>cpe:/a:apache:commons_net</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jackson-databind-2.14.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jsch.agentproxy.usocket-nc-0.0.9.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.jcraft/jsch\.agentproxy\.usocket\-nc@.*$</packageUrl>
+        <cpe>cpe:/a:netcat:netcat</cpe>
+    </suppress>
 </suppressions>
