@@ -227,7 +227,11 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
           :jlink-image (jlink-image-dockerfile java-runtime))))
 
 (defn tag-base [docker-registry lib]
-  (str (if docker-registry (str docker-registry "/") "") (name lib) ":"))
+  (let [namespace (namespace lib)]
+    (str (if docker-registry (str docker-registry "/") "")
+         (if namespace (str namespace "/") "")
+         (name lib)
+         ":")))
 
 (defn app-docker-tag
   ([tag-base version]
