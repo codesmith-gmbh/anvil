@@ -103,7 +103,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
 
 (defmethod clj-run-script :class
   [{:keys [main-namespace]}]
-  (default-run-script main-namespace))
+  (default-run-script (str/replace main-namespace "-" "_")))
 
 (defn generate-app-run-script [{:keys [target clj-runtime]}]
   (let [bin-dir-path (fs/path target "bin")
