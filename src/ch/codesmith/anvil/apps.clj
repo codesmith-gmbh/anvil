@@ -345,7 +345,7 @@ else
    if docker pull " lib-docker-tag " >/dev/null; then
      echo \"Base image " lib-docker-tag " pulled.\"
    else
-     echo \"The base image " lib-docker-tag " does not exists remotely; building and pushing\"
+     echo \"The base image " lib-docker-tag " does not exists remotely; building\"
      ../docker-lib/docker-build.sh
    fi
 fi
