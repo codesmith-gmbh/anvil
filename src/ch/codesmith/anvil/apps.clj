@@ -22,16 +22,16 @@
                             (if (keyword? arg)
                               (subs (str arg) 1)
                               arg))
-                          args))
-      (str/replace "/" "--")
-      (str/replace "\\" "--")
-      (str/replace ":" "--")))
+                       args))
+    (str/replace "/" "--")
+    (str/replace "\\" "--")
+    (str/replace ":" "--")))
 
 (defn full-jar-file-name [lib version]
   (nondir-full-name lib (str version ".jar")))
 
 (defmulti copy-jar
-          {:arglists '([lib props jar-dir target-dir])}
+  {:arglists '([lib props jar-dir target-dir])}
   (fn [_ props _ _]
     (:deps/manifest props)))
 
@@ -60,14 +60,14 @@
 
 (defn all-libs [{:keys [classpath libs]}]
   (let [used-libs (into #{}
-                        (comp (map second)
-                              (keep :lib-name))
-                        classpath)]
+                    (comp (map second)
+                      (keep :lib-name))
+                    classpath)]
     (into {}
-          (map
-            (fn [lib]
-              [lib (get libs lib)]))
-          used-libs)))
+      (map
+        (fn [lib]
+          [lib (get libs lib)]))
+      used-libs)))
 
 (defn copy-jars [basis lib-filter props-trans jar-dir target-dir]
   (let [all-libs (all-libs basis)]
@@ -110,23 +110,25 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
         script-path  (fs/path bin-dir-path "run.sh")]
     (fs/create-dirs bin-dir-path)
     (spit script-path
-          (clj-run-script clj-runtime))
+      (clj-run-script clj-runtime))
     (make-executable script-path)))
 
 (def java-jdk-docker-base-images
-  {:java8  "eclipse-temurin:8u382-b05-jdk-jammy"
-   :java11 "eclipse-temurin:11.0.20_8-jdk-jammy"
-   :java17 "eclipse-temurin:17.0.8_7-jdk-jammy"
-   :java18 "eclipse-temurin:18.0.2.1_1-jdk-jammy"
-   :java19 "eclipse-temurin:19.0.1_10-jre-jammy"
-   :java20 "eclipse-temurin:20.0.2_9-jdk-jammy"})
+  {:java8  "eclipse-temurin:8u382-b05-jdk-jammy",
+   :java11 "eclipse-temurin:11.0.20.1_1-jdk-jammy",
+   :java17 "eclipse-temurin:17.0.8.1_1-jdk-jammy",
+   :java18 "eclipse-temurin:18.0.2.1_1-jdk-jammy",
+   :java19 "eclipse-temurin:19.0.2_7-jdk-jammy",
+   :java20 "eclipse-temurin:20.0.2_9-jdk-jammy",
+   :java21 "eclipse-temurin:21_35-jdk-jammy"})
 
 (def java-jre-docker-base-images
-  {:java8  "eclipse-temurin:8u382-b05-jre-jammy"
-   :java11 "eclipse-temurin:11.0.20_8-jre-jammy"
-   :java17 "eclipse-temurin:17.0.8_7-jre-jammy"})
+  {:java8  "eclipse-temurin:8u382-b05-jre-jammy",
+   :java11 "eclipse-temurin:11.0.20.1_1-jre-jammy",
+   :java17 "eclipse-temurin:17.0.8.1_1-jre-jammy",
+   :java21 "eclipse-temurin:21_35-jre-jammy"})
 
-(def default-runtime-base-image "ubuntu:jammy-20230804")
+(def default-runtime-base-image "ubuntu:jammy-20231004")
 
 (defmulti resolve-modules identity)
 
@@ -167,13 +169,13 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
                       {:docker-image-type :simple-image
                        :docker-base-image docker-base-image}
                       (throw (ex-info (str "no jre images for java version " version)
-                                      {:version      version
-                                       :java-runtime runtime})))
+                               {:version      version
+                                :java-runtime runtime})))
       (= type :jlink) {:docker-image-type         :jlink-image
                        :docker-jdk-base-image     (or docker-jdk-base-image (version java-jdk-docker-base-images))
                        :docker-runtime-base-image (or docker-runtime-base-image default-runtime-base-image)
                        :modules                   (into (resolve-modules modules-profile)
-                                                        extra-modules)}
+                                                    extra-modules)}
       :else (throw (ex-info "cannot resolve java runtime" {:java-runtime runtime})))
     :version version
     :java-opts java-opts))
@@ -193,45 +195,45 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
 (defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version java-opts exposed-ports]}]
   (println "Creating the App Dockerfile")
   (spit (fs/path target-path "Dockerfile")
-        (str/join "\n"
-                  (concat
-                    [(str "FROM " docker-base-image-name)]
-                    (map (fn [port]
-                           (str "EXPOSE " port))
-                         exposed-ports)
-                    [(str "ENV VERSION=\"" version "\"")
-                     "ENV LOCATION=\":docker\""
-                     (str "ENV JAVA_OPTS=\"" (or java-opts (default-java-opts java-version)) "\"")
-                     "COPY /app/ /app/"
-                     "CMD [\"/app/bin/run.sh\"]"]))))
+    (str/join "\n"
+      (concat
+        [(str "FROM " docker-base-image-name)]
+        (map (fn [port]
+               (str "EXPOSE " port))
+          exposed-ports)
+        [(str "ENV VERSION=\"" version "\"")
+         "ENV LOCATION=\":docker\""
+         (str "ENV JAVA_OPTS=\"" (or java-opts (default-java-opts java-version)) "\"")
+         "COPY /app/ /app/"
+         "CMD [\"/app/bin/run.sh\"]"]))))
 
 (defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
   (str "FROM " docker-base-image "\n"
-       "COPY /lib/ /lib/anvil/\n"))
+    "COPY /lib/ /lib/anvil/\n"))
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
                                       docker-runtime-base-image
                                       modules]}]
   (str "FROM " docker-jdk-base-image "\n"
-       "RUN jlink --add-modules " (str/join "," modules) " --output /tmp/jre\n"
-       "FROM " docker-runtime-base-image "\n"
-       "COPY --from=0 /tmp/jre /jre\n"
-       "ENV PATH=/jre/bin:$PATH\n"
-       "COPY /lib/ /lib/anvil/\n"))
+    "RUN jlink --add-modules " (str/join "," modules) " --output /tmp/jre\n"
+    "FROM " docker-runtime-base-image "\n"
+    "COPY --from=0 /tmp/jre /jre\n"
+    "ENV PATH=/jre/bin:$PATH\n"
+    "COPY /lib/ /lib/anvil/\n"))
 
 (defn lib-dockerfile [{:keys [target-path java-runtime]}]
   (println "Creating the Lib Dockerfile")
   (spit (fs/path target-path "Dockerfile")
-        (case (:docker-image-type java-runtime)
-          :simple-image (simple-base-image-dockerfile java-runtime)
-          :jlink-image (jlink-image-dockerfile java-runtime))))
+    (case (:docker-image-type java-runtime)
+      :simple-image (simple-base-image-dockerfile java-runtime)
+      :jlink-image (jlink-image-dockerfile java-runtime))))
 
 (defn tag-base [docker-registry lib]
   (let [namespace (namespace lib)]
     (str (if docker-registry (str docker-registry "/") "")
-         (if namespace (str namespace "/") "")
-         (name lib)
-         ":")))
+      (if namespace (str namespace "/") "")
+      (name lib)
+      ":")))
 
 (defn app-docker-tag
   ([tag-base version]
@@ -244,10 +246,10 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
                           {:java-runtime (dissoc java-runtime :java-opts)
                            :anvil-epoch  anvil-epoch
                            :libs         (into []
-                                               (map (fn [[lib coords]]
-                                                      [lib (dissoc coords :dependents :parents :paths :exclusions
-                                                                   :deps/root)]))
-                                               (all-libs basis))})
+                                           (map (fn [[lib coords]]
+                                                  [lib (dissoc coords :dependents :parents :paths :exclusions
+                                                         :deps/root)]))
+                                           (all-libs basis))})
         hash            (bc/bytes->hex (hash/sha3-256 serialized-libs))]
     (str tag-base "lib-" hash)))
 
@@ -257,13 +259,13 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
   (fs/create-dirs target-path)
   (let [script-file (fs/path target-path script-name)]
     (spit script-file
-          (str "#!/bin/bash\n"
-               "set -e\n"
-               "dir=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\n"
-               "(
-  cd \"$dir\" || exit\n"
-               "  " body
-               "\n)\n"))
+      (str "#!/bin/bash\n"
+        "set -e\n"
+        "dir=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\n"
+        "(
+cd \"$dir\" || exit\n"
+        "  " body
+        "\n)\n"))
     (make-executable script-file)
     script-file))
 
@@ -290,16 +292,16 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
                                               :modules-profile :anvil}}}]
   (when (and main-namespace clj-runtime)
     (throw (ex-info (str "only one of :main-namespace or :clj-runtime may be specified")
-                    {:main-namespace main-namespace
-                     :clj-runtime    clj-runtime})))
+             {:main-namespace main-namespace
+              :clj-runtime    clj-runtime})))
   (when main-namespace
     (log/warn-c {:main-namespace main-namespace} "Use of :main-namespace is deprecated, use :clj-runtime instead"))
   (when (and (= (:script-type clj-runtime) :class)
-             (not aot))
+          (not aot))
     (throw (ex-info (str "using the script-type `:class` requires AOT compilation, however :aot is not defined") {})))
   (let [clj-runtime (or clj-runtime
-                        {:main-namespace main-namespace
-                         :script-type    :clojure.main})
+                      {:main-namespace main-namespace
+                       :script-type    :clojure.main})
         root        (fs/absolutize (fs/path (or root ".")))]
     (binding [b/*project-root* (str root)]
       (let [basis                   (or basis (ab/create-basis {}))
@@ -356,9 +358,9 @@ fi
                                                                :script-name "docker-push.sh"
                                                                :body
                                                                (str/join "\n"
-                                                                         ["../docker-lib/docker-push.sh"
-                                                                          (docker-push-body app-tag)
-                                                                          (docker-push-body latest-tag)])})]
+                                                                 ["../docker-lib/docker-push.sh"
+                                                                  (docker-push-body app-tag)
+                                                                  (docker-push-body latest-tag)])})]
           (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
           (b/copy-file {:src    jar-file
                         :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
