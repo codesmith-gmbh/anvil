@@ -272,6 +272,9 @@ cd \"$dir\" || exit\n"
 (defn docker-build-body [tag]
   (str "docker build -t " tag " ."))
 
+(defn docker-tag [existing-tag new-tag]
+  (str "docker tag " existing-tag " " new-tag))
+
 (defn docker-push-body [tag]
   (str "docker push " tag))
 
@@ -335,6 +338,7 @@ cd \"$dir\" || exit\n"
               app-dir                 (io/file docker-app-dir "app")
               app-lib-dir             (io/file app-dir "lib")
               app-tag                 (app-docker-tag tag-base version)
+              versioned-app-tag       (app-docker-tag tag-base "\"${VERSION}\"")
               latest-tag              (app-docker-tag tag-base "latest")
               app-docker-build-script (generate-docker-script {:target-path docker-app-dir
                                                                :script-name "docker-build.sh"
@@ -353,14 +357,22 @@ else
 fi
 "
                                                                               (docker-build-body app-tag)
-                                                                              (str "\ndocker tag " app-tag " " latest-tag))})
+                                                                              "\n"
+                                                                              (docker-tag app-tag latest-tag))})
               app-docker-push-script  (generate-docker-script {:target-path docker-app-dir
                                                                :script-name "docker-push.sh"
-                                                               :body
-                                                               (str/join "\n"
-                                                                 ["../docker-lib/docker-push.sh"
-                                                                  (docker-push-body app-tag)
-                                                                  (docker-push-body latest-tag)])})]
+                                                               :body        (str "
+../docker-lib/docker-push.sh
+VERSION=\"$1\"
+if [ -z \"$VERSION\" ]
+then
+  " (docker-push-body app-tag) "
+else
+  " (docker-tag app-tag versioned-app-tag) "\n  " (docker-push-body versioned-app-tag) "
+fi
+" (docker-push-body latest-tag) "
+"
+                                                                              )})]
           (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
           (b/copy-file {:src    jar-file
                         :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
