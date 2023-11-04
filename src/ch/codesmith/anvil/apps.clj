@@ -188,6 +188,11 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
   "-XX:MaxRAMPercentage=85 -XX:+UseZGC")
 
 (defmethod default-java-opts
+  :java21
+  [_]
+  "-XX:MaxRAMPercentage=85 -XX:+UseZGC")
+
+(defmethod default-java-opts
   :default
   [_]
   "-XX:MaxRAMPercentage=85")
