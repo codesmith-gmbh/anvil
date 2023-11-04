@@ -36,6 +36,11 @@
     basis
     polylibs))
 
+(def default-compile-opts
+  {:elide-meta     [:doc :file :line :since]
+   :direct-linking false                                    ;; fix specter compilation problem before setting true
+   })
+
 (defn jar ^String [{:keys [lib
                            version
                            basis
@@ -79,11 +84,12 @@
         (b/copy-dir {:src-dirs   src-dirs
                      :target-dir class-dir})
         (when aot
-          (b/compile-clj (merge {:basis     basis
-                                 :class-dir (str (fs/absolutize class-dir))
-                                 :src-dirs  (into []
-                                              (map (comp str fs/absolutize))
-                                              src-dirs)}
+          (b/compile-clj (merge {:basis        basis
+                                 :class-dir    (str (fs/absolutize class-dir))
+                                 :src-dirs     (into []
+                                                 (map (comp str fs/absolutize))
+                                                 src-dirs)
+                                 :compile-opts default-compile-opts}
                            aot)))
         (spit-version-file {:version version
                             :dir     (io/file class-dir
