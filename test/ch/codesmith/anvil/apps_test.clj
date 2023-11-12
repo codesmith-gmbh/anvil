@@ -5,7 +5,8 @@
             [clojure.edn :as edn]
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
-            [clojure.tools.build.api :as b]))
+            [clojure.tools.build.api :as b]
+            [clojure.tools.logging :as log]))
 
 (deftest nondir-full-name-correctness
   (is (= "a" (apps/nondir-full-name "a")))
@@ -53,16 +54,17 @@
                 lib-docker-tag
                 app-docker-scripts]} (apps/docker-generator
                                        (merge hw/base-properties
-                                              {:java-runtime         {:version         :java17
-                                                                      :type            :jlink
-                                                                      :modules-profile :java.base}
-                                               :clj-runtime          {:main-namespace "test.hello"
-                                                                      :script-type    script-type}
-                                               :aot                  aot
-                                               :docker-registry      docker-registry
-                                               :docker-image-options {:exposed-ports [8000 1400]}}))
+                                         {:java-runtime         {:version         :java17
+                                                                 :type            :jlink
+                                                                 :modules-profile :java.base}
+                                          :clj-runtime          {:main-namespace "test.hello"
+                                                                 :script-type    script-type}
+                                          :aot                  aot
+                                          :docker-registry      docker-registry
+                                          :docker-image-options {:exposed-ports [8000 1400]}}))
         port            5001]
-    (println app-docker-tag lib-docker-tag)
+    (log/info {:app-docker-tag app-docker-tag
+               :lib-docker-tag lib-docker-tag})
     (try
       ; 1. cleanup
       (rm-registry-images!)

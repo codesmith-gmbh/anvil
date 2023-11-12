@@ -6,7 +6,8 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
-            [deps-deploy.deps-deploy :as deploy]))
+            [deps-deploy.deps-deploy :as deploy]
+            [taoensso.timbre :as log]))
 
 (defn spit-version-file [{:keys [version dir]}]
   (let [file (io/file dir "version.edn")]
@@ -53,6 +54,10 @@
                            aot]
                     :or   {root "."}}]
   (let [root (fs/absolutize root)]
+    (log/info {:message  "build library"
+               :lib      lib
+               :root-dir root
+               :version  version})
     (binding [b/*project-root* (str root)]
       (let [target-dir (or target-dir (str (fs/path root "target")))
             basis      (or basis (ab/create-basis {}))
@@ -84,6 +89,8 @@
         (b/copy-dir {:src-dirs   src-dirs
                      :target-dir class-dir})
         (when aot
+          (log/debug {:message "aot compiling"
+                      :aot     aot})
           (b/compile-clj (merge {:basis        basis
                                  :class-dir    (str (fs/absolutize class-dir))
                                  :src-dirs     (into []

@@ -197,7 +197,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
   "-XX:MaxRAMPercentage=85")
 
 (defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version java-opts exposed-ports]}]
-  (println "Creating the App Dockerfile")
+  (log/info "Creating the App Dockerfile")
   (spit (fs/path target-path "Dockerfile")
     (str/join "\n"
       (concat
@@ -226,7 +226,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
     "COPY /lib/ /lib/anvil/\n"))
 
 (defn lib-dockerfile [{:keys [target-path java-runtime]}]
-  (println "Creating the Lib Dockerfile")
+  (log/info "Creating the Lib Dockerfile")
   (spit (fs/path target-path "Dockerfile")
     (case (:docker-image-type java-runtime)
       :simple-image (simple-base-image-dockerfile java-runtime)
@@ -335,6 +335,7 @@ cd \"$dir\" || exit\n"
                                                              :script-name "docker-push.sh"
                                                              :body        (docker-push-body lib-docker-tag)})]
         ; 2. create the docker lib folder
+        (log/debug {:message "copying lib jars"})
         (copy-lib-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
         (lib-dockerfile {:target-path  docker-lib-dir
                          :java-runtime java-runtime})
@@ -378,6 +379,7 @@ fi
 " (docker-push-body latest-tag) "
 "
                                                                               )})]
+          (log/debug {:message "copying app jars"})
           (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
           (b/copy-file {:src    jar-file
                         :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
@@ -392,6 +394,8 @@ fi
                            :exposed-ports          (:exposed-ports docker-image-options)
                            :jar-file               jar-file
                            :java-opts              (:java-opts java-runtime)})
+          (log/info {:app-docker-tag app-docker-tag
+                     :lib-docker-tag lib-docker-tag})
           {:app-docker-tag     app-tag
            :lib-docker-tag     lib-docker-tag
            :lib-docker-scripts {:build lib-docker-build-script
