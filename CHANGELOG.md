@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.10.212 (2023-11-12)
+
 ### Changed
 
 - bump dependencies
