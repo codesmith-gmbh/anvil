@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+### Changed
+
+- bump dependencies
+- slightly better logging
+
 ## 0.10.205 (2023-11-04)
 
 ## 0.10.200 (2023-10-13)
