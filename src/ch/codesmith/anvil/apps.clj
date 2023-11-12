@@ -5,13 +5,12 @@
             [ch.codesmith.anvil.basis :as ab]
             [ch.codesmith.anvil.io]
             [ch.codesmith.anvil.libs :as libs]
-            [ch.codesmith.logger :as log]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
-            [com.rpl.specter :as sp]))
+            [com.rpl.specter :as sp]
+            [taoensso.timbre :as log]))
 
-(log/deflogger)
 
 (def anvil-epoch "0.10")
 
@@ -303,7 +302,8 @@ cd \"$dir\" || exit\n"
              {:main-namespace main-namespace
               :clj-runtime    clj-runtime})))
   (when main-namespace
-    (log/warn-c {:main-namespace main-namespace} "Use of :main-namespace is deprecated, use :clj-runtime instead"))
+    (log/warn {:main-namespace main-namespace
+               :message        "Use of :main-namespace is deprecated, use :clj-runtime instead"}))
   (when (and (= (:script-type clj-runtime) :class)
           (not aot))
     (throw (ex-info (str "using the script-type `:class` requires AOT compilation, however :aot is not defined") {})))
