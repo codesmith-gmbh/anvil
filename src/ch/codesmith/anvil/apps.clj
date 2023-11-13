@@ -39,12 +39,12 @@
   [lib {:keys [git/tag git/sha deps/root anvil/version]} jar-dir target-dir]
   (let [target-dir     (io/file target-dir (nondir-full-name lib))
         version        (or version (if tag (str tag "-" sha) sha))
-        jar-file       (libs/jar {:lib        lib
-                                  :version    version
-                                  :with-pom?  false
-                                  :root       root
-                                  :target-dir target-dir
-                                  :clean?     true})
+        {:keys [jar-file]} (libs/jar {:lib        lib
+                                      :version    version
+                                      :with-pom?  false
+                                      :root       root
+                                      :target-dir target-dir
+                                      :clean?     true})
         copy-file-args {:src    jar-file
                         :target (str (io/file jar-dir (full-jar-file-name lib version)))}]
     (b/copy-file copy-file-args)))
@@ -285,7 +285,7 @@ cd \"$dir\" || exit\n"
 (defn docker-generator [{:keys [lib
                                 version
                                 root
-                                basis
+                                basis-creation-fn
                                 target-dir
                                 main-namespace
                                 clj-runtime
@@ -311,19 +311,19 @@ cd \"$dir\" || exit\n"
                       {:main-namespace main-namespace
                        :script-type    :clojure.main})
         root        (fs/absolutize (fs/path (or root ".")))]
-    (binding [b/*project-root* (str root)]
-      (let [basis                   (or basis (ab/create-basis {}))
-            target-dir              (str (or target-dir (fs/path root "target")))
+    (binding [libs/*basis-creation-fn* (or basis-creation-fn ab/create-basis)
+              b/*project-root*         (str root)]
+      (let [target-dir              (str (or target-dir (fs/path root "target")))
             ; 1. create the jar file for the project
-            jar-file                (libs/jar {:lib              lib
-                                               :version          version
-                                               :with-pom?        false
-                                               :root             (str root)
-                                               :basis            basis
-                                               :target-dir       target-dir
-                                               :description-data description-data
-                                               :clean?           true
-                                               :aot              aot})
+            {:keys [jar-file
+                    basis]} (libs/jar {:lib               lib
+                                       :version           version
+                                       :with-pom?         false
+                                       :root              (str root)
+                                       :target-dir        target-dir
+                                       :description-data  description-data
+                                       :clean?            true
+                                       :aot               aot})
             tag-base                (tag-base docker-registry lib)
             java-runtime            (resolve-java-runtime java-runtime)
             lib-docker-tag          (lib-docker-tag tag-base basis java-runtime)

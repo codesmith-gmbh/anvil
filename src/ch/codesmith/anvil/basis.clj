@@ -12,6 +12,5 @@
   [val]
   val)
 
-(defn create-basis [params]
-  (let [extra (extra (get params :extra :gitlab))]
-    (b/create-basis (assoc params :extra extra))))
+(defn create-basis []
+  (b/create-basis {}))

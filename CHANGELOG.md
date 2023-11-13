@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## Changed / Fixed
+
+- BREAKING CHANGE: API change: basis create function as argument instead of basis themselves, as the latter are useless
+  as we bind to `*project-root*` inside the functions.
+- BREAKING CHANGE: lib/jar returns a structure.
+- BREAKING CHANGE: remove default gitlab basis creation.
+
 ## 0.10.212 (2023-11-12)
 
 ### Changed

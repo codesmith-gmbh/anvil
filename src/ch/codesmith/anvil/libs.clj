@@ -9,6 +9,8 @@
             [deps-deploy.deps-deploy :as deploy]
             [taoensso.timbre :as log]))
 
+(def ^:dynamic *basis-creation-fn* ab/create-basis)
+
 (defn spit-version-file [{:keys [version dir]}]
   (let [file (io/file dir "version.edn")]
     (io/make-parents file)
@@ -44,7 +46,6 @@
 
 (defn jar ^String [{:keys [lib
                            version
-                           basis
                            with-pom?
                            polylibs
                            root
@@ -60,7 +61,7 @@
                :version  version})
     (binding [b/*project-root* (str root)]
       (let [target-dir (or target-dir (str (fs/path root "target")))
-            basis      (or basis (ab/create-basis {}))
+            basis      (*basis-creation-fn*)
             basis      (if polylibs
                          (patch-basis-for-publication basis polylibs version)
                          basis)
@@ -104,7 +105,8 @@
         (b/jar {:class-dir class-dir
                 :jar-file  jar-file
                 :manifest  {"Implementation-Version" version}})
-        jar-file))))
+        {:jar-file jar-file
+         :basis    basis}))))
 
 (defn deploy [{:keys [jar-file pom-file root-dir target-dir class-dir lib
                       installer sign-releases?]

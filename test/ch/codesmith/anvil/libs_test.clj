@@ -13,13 +13,12 @@
 (def target-dir "target")
 
 (defn test-jar [with-pom?]
-  (let [basis (ab/create-basis {:project "deps.edn"
-                                :aliases [:test-resources]})]
+  (binding [libs/*basis-creation-fn* #(b/create-basis {:project "deps.edn"
+                                                       :aliases [:test-resources]})]
     (libs/jar {:lib              lib
                :version          version
                :with-pom?        with-pom?
                :root             "."
-               :basis            basis
                :target-dir       target-dir
                :description-data {:authors [{:name "Stanislas Nanchen"}]
                                   :url     "https://codesmith.ch"}
@@ -31,25 +30,25 @@
       (is (fs/regular-file? jar-file))
       (with-open [zip-file (ZipFile. (.toFile jar-file))]
         (let [entries (into #{}
-                            (comp (map (fn [^ZipEntry zip-entry]
-                                         {:name       (.getName zip-entry)
-                                          :directory? (.isDirectory zip-entry)}))
-                                  (remove (fn [{:keys [name]}]
-                                            (.startsWith name "META-INF"))))
-                            (enumeration-seq (.entries zip-file)))]
+                        (comp (map (fn [^ZipEntry zip-entry]
+                                     {:name       (.getName zip-entry)
+                                      :directory? (.isDirectory zip-entry)}))
+                          (remove (fn [{:keys [name]}]
+                                    (.startsWith name "META-INF"))))
+                        (enumeration-seq (.entries zip-file)))]
           (doseq [{:keys [name directory?] :as entry} entries]
             (is ((if directory? fs/directory? fs/regular-file?)
                  (fs/path classes-dir name))
-                entry)))))))
+              entry)))))))
 
 (deftest jar-correctness
   (test-jar false)
   (test-jar true))
 
 (deftest deploy-local-correctness
-  (let [jar-file    (libs/jar (merge hw/base-properties
-                                     {:with-pom? true
-                                      :clean?    true}))
+  (let [{:keys [jar-file]} (libs/jar (merge hw/base-properties
+                                       {:with-pom? true
+                                        :clean?    true}))
         m2-repo-dir (io/file
                       (System/getProperty "user.home")
                       ".m2"
