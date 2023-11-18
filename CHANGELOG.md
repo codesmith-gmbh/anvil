@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.10.216 (2023-11-18)
+
 ## Changed / Fixed
 
 - BREAKING CHANGE: API change: basis create function as argument instead of basis themselves, as the latter are useless
