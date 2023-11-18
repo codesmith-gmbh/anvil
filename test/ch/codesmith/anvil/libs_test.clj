@@ -1,6 +1,5 @@
 (ns ch.codesmith.anvil.libs-test
   (:require [babashka.fs :as fs]
-            [ch.codesmith.anvil.basis :as ab]
             [ch.codesmith.anvil.helloworld :as hw]
             [ch.codesmith.anvil.libs :as libs]
             [clojure.java.io :as io]

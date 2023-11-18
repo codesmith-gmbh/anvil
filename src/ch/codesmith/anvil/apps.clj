@@ -11,7 +11,6 @@
             [com.rpl.specter :as sp]
             [taoensso.timbre :as log]))
 
-
 (def anvil-epoch "0.10")
 
 (defn nondir-full-name
