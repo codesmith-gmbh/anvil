@@ -195,7 +195,14 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
   [_]
   "-XX:MaxRAMPercentage=85")
 
-(defn app-dockerfile [{:keys [target-path java-version docker-base-image-name version java-opts exposed-ports]}]
+(defn escape-double-quote [text]
+  (str/escape text {\" "\\\""
+                    \\ "\\"}))
+
+(defn app-dockerfile [{:keys [target-path java-version
+                              docker-base-image-name version
+                              java-opts exposed-ports env-vars
+                              volumes]}]
   (log/info "Creating the App Dockerfile")
   (spit (fs/path target-path "Dockerfile")
     (str/join "\n"
@@ -204,10 +211,17 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
         (map (fn [port]
                (str "EXPOSE " port))
           exposed-ports)
-        [(str "ENV VERSION=\"" version "\"")
-         "ENV LOCATION=\":docker\""
-         (str "ENV JAVA_OPTS=\"" (or java-opts (default-java-opts java-version)) "\"")
-         "COPY /app/ /app/"
+        (map (fn [[key value]]
+               (str "ENV " (name key) "=\"" (escape-double-quote value) "\""))
+          (merge
+            {:VERSION   version
+             :LOCATION  ":docker"
+             :JAVA_OPTS (or java-opts (default-java-opts java-version))}
+            env-vars))
+        (map (fn [volume]
+               (str "VOLUME " volume))
+          volumes)
+        ["COPY /app/ /app/"
          "CMD [\"/app/bin/run.sh\"]"]))))
 
 (defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
@@ -315,14 +329,14 @@ cd \"$dir\" || exit\n"
       (let [target-dir              (str (or target-dir (fs/path root "target")))
             ; 1. create the jar file for the project
             {:keys [jar-file
-                    basis]} (libs/jar {:lib               lib
-                                       :version           version
-                                       :with-pom?         false
-                                       :root              (str root)
-                                       :target-dir        target-dir
-                                       :description-data  description-data
-                                       :clean?            true
-                                       :aot               aot})
+                    basis]} (libs/jar {:lib              lib
+                                       :version          version
+                                       :with-pom?        false
+                                       :root             (str root)
+                                       :target-dir       target-dir
+                                       :description-data description-data
+                                       :clean?           true
+                                       :aot              aot})
             tag-base                (tag-base docker-registry lib)
             java-runtime            (resolve-java-runtime java-runtime)
             lib-docker-tag          (lib-docker-tag tag-base basis java-runtime)
