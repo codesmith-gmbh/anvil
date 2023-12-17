@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+## 0.10.224 (2023-12-17)
+
 # Added
 
 - specify env vars and volumes for the generate dockerfile.
