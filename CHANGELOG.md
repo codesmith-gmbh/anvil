@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+# Added
+
+- specify env vars and volumes for the generate dockerfile.
+
+# Changed
+
+- bump dependiencies
+
 ## 0.10.219 (2023-11-18)
 
 ## 0.10.216 (2023-11-18)
