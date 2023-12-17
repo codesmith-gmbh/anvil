@@ -118,15 +118,15 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
    :java18 "eclipse-temurin:18.0.2.1_1-jdk-jammy",
    :java19 "eclipse-temurin:19.0.2_7-jdk-jammy",
    :java20 "eclipse-temurin:20.0.2_9-jdk-jammy",
-   :java21 "eclipse-temurin:21_35-jdk-jammy"})
+   :java21 "eclipse-temurin:21.0.1_12-jdk-jammy"})
 
 (def java-jre-docker-base-images
   {:java8  "eclipse-temurin:8u392-b08-jre-jammy",
    :java11 "eclipse-temurin:11.0.21_9-jre-jammy",
    :java17 "eclipse-temurin:17.0.9_9-jre-jammy",
-   :java21 "eclipse-temurin:21_35-jre-jammy"})
+   :java21 "eclipse-temurin:21.0.1_12-jre-jammy"})
 
-(def default-runtime-base-image "ubuntu:jammy-20231004")
+(def default-runtime-base-image "ubuntu:jammy-20231211.1")
 
 (defmulti resolve-modules identity)
 
@@ -405,6 +405,8 @@ fi
                            :docker-base-image-name lib-docker-tag
                            :version                version
                            :exposed-ports          (:exposed-ports docker-image-options)
+                           :env-vars               (:env-vars docker-image-options)
+                           :volumes                (:volumes docker-image-options)
                            :jar-file               jar-file
                            :java-opts              (:java-opts java-runtime)})
           (log/info {:app-docker-tag app-docker-tag

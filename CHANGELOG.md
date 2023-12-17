@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+# Added
+
+- fix specify env vars and volumes for the generate dockerfile.
+
+# Changed
+
+- bump docker base image versions
+
 ## 0.10.224 (2023-12-17)
 
 # Added
@@ -11,7 +19,7 @@ All notable changes to this project will be documented in this file. This change
 
 # Changed
 
-- bump dependiencies
+- bump dependencies
 
 ## 0.10.219 (2023-11-18)
 
