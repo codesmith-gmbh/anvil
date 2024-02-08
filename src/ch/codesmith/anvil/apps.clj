@@ -112,21 +112,21 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
     (make-executable script-path)))
 
 (def java-jdk-docker-base-images
-  {:java8  "eclipse-temurin:8u392-b08-jdk-jammy",
-   :java11 "eclipse-temurin:11.0.21_9-jdk-jammy",
-   :java17 "eclipse-temurin:17.0.9_9-jdk-jammy",
+  {:java8  "eclipse-temurin:8u402-b06-jdk-jammy",
+   :java11 "eclipse-temurin:11.0.22_7-jdk-jammy",
+   :java17 "eclipse-temurin:17.0.10_7-jdk-jammy",
    :java18 "eclipse-temurin:18.0.2.1_1-jdk-jammy",
    :java19 "eclipse-temurin:19.0.2_7-jdk-jammy",
    :java20 "eclipse-temurin:20.0.2_9-jdk-jammy",
-   :java21 "eclipse-temurin:21.0.1_12-jdk-jammy"})
+   :java21 "eclipse-temurin:21.0.2_13-jdk-jammy"})
 
 (def java-jre-docker-base-images
-  {:java8  "eclipse-temurin:8u392-b08-jre-jammy",
-   :java11 "eclipse-temurin:11.0.21_9-jre-jammy",
-   :java17 "eclipse-temurin:17.0.9_9-jre-jammy",
-   :java21 "eclipse-temurin:21.0.1_12-jre-jammy"})
+  {:java8 "eclipse-temurin:8u402-b06-jre-jammy",
+   :java11 "eclipse-temurin:11.0.22_7-jre-jammy",
+   :java17 "eclipse-temurin:17.0.10_7-jre-jammy",
+   :java21 "eclipse-temurin:21.0.2_13-jre-jammy"})
 
-(def default-runtime-base-image "ubuntu:jammy-20231211.1")
+(def default-runtime-base-image "ubuntu:jammy-20240125")
 
 (defmulti resolve-modules identity)
 

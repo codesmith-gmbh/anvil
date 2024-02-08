@@ -1,6 +1,6 @@
 {:paths ["src" "resources"]
  :deps  {org.clojure/clojure                  {:mvn/version "1.11.1"}
-         babashka/fs                          {:mvn/version "0.4.19"}
+         babashka/fs                          {:mvn/version "0.5.20"}
          io.github.clojure/tools.build        {:mvn/version "0.9.6"
                                                :exclusions  [org.slf4j/slf4j-nop]}
          org.clojure/tools.deps.alpha         {:mvn/version "0.15.1254"}
@@ -11,11 +11,11 @@
          com.fzakaria/slf4j-timbre            {:mvn/version "0.4.1"}
          org.clojure/data.xml                 {:mvn/version "0.2.0-alpha8"}
          ;; -- force some dependencies for nvd
-         com.google.guava/guava               {:mvn/version "32.1.3-jre"}
-         com.amazonaws/aws-java-sdk-s3        {:mvn/version "1.12.620"}
-         com.amazonaws/aws-java-sdk-sts       {:mvn/version "1.12.620"}
+         com.google.guava/guava               {:mvn/version "33.0.0-jre"}
+         com.amazonaws/aws-java-sdk-s3        {:mvn/version "1.12.654"}
+         com.amazonaws/aws-java-sdk-sts       {:mvn/version "1.12.654"}
          commons-io/commons-io                {:mvn/version "2.15.1"}
-         com.cognitect/http-client            {:mvn/version "1.0.126"}
+         com.cognitect/http-client            {:mvn/version "1.0.127"}
          org.codehaus.plexus/plexus-cipher    {:mvn/version "2.1.0"}
          org.eclipse.jetty/jetty-client       {:mvn/version "9.4.53.v20231009"}
          }

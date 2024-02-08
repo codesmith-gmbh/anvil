@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. This change
 
 ## Unreleased
 
+# Changed
+
+- bump docker base image versions
+- bump dependencies
+
 ## 0.10.227 (2023-12-17)
 
 # Added

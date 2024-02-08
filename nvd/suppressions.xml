@@ -156,4 +156,7 @@
         <cve>CVE-2022-4245</cve>
     </suppress>
     <!-- end CVE-2022-4244 -->
+    <suppress>
+        <cve>CVE-2017-20189</cve>
+    </suppress>
 </suppressions>
