@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.10.233 (2024-02-10)
+
 # Added
 
 - option to specify the docker platform architecture.
