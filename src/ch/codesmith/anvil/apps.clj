@@ -238,8 +238,8 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
                                       docker-runtime-base-image
-                                      modules]}]
-  (str "FROM " docker-jdk-base-image "\n"
+                                      modules platform-architecture]}]
+  (str "FROM " (plaftorm-option platform-architecture) " " docker-jdk-base-image "\n"
     "RUN jlink --add-modules " (str/join "," modules) " --output /tmp/jre\n"
     "FROM " docker-runtime-base-image "\n"
     "COPY --from=0 /tmp/jre /jre\n"
