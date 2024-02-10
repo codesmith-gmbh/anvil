@@ -156,7 +156,9 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
 (defmethod resolve-modules :java.base [_]
   #{"java.base"})
 
-(defn resolve-java-runtime [{:keys [version type modules-profile extra-modules docker-base-image docker-jdk-base-image docker-runtime-base-image java-opts] :as runtime}]
+(defn resolve-java-runtime [{:keys [version type modules-profile extra-modules docker-base-image
+                                    docker-jdk-base-image docker-runtime-base-image java-opts
+                                    platform-architecture] :as runtime}]
   (assoc
     (cond
       docker-base-image {:docker-image-type :simple-image
@@ -176,7 +178,8 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
                                                     extra-modules)}
       :else (throw (ex-info "cannot resolve java runtime" {:java-runtime runtime})))
     :version version
-    :java-opts java-opts))
+    :java-opts java-opts
+    :platform-architecture platform-architecture))
 
 (defmulti default-java-opts identity)
 
