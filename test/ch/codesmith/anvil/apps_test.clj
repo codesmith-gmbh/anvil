@@ -54,9 +54,10 @@
                 lib-docker-tag
                 app-docker-scripts]} (apps/docker-generator
                                        (merge hw/base-properties
-                                         {:java-runtime         {:version         :java17
-                                                                 :type            :jlink
-                                                                 :modules-profile :java.base}
+                                         {:java-runtime         {:version               :java17
+                                                                 :type                  :jlink
+                                                                 :modules-profile       :java.base
+                                                                 :platform-architecture "linux/amd64"}
                                           :clj-runtime          {:main-namespace "test.hello"
                                                                  :script-type    script-type}
                                           :aot                  aot

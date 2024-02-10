@@ -157,8 +157,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
   #{"java.base"})
 
 (defn resolve-java-runtime [{:keys [version type modules-profile extra-modules docker-base-image
-                                    docker-jdk-base-image docker-runtime-base-image java-opts
-                                    platform-architecture] :as runtime}]
+                                    docker-jdk-base-image docker-runtime-base-image java-opts] :as runtime}]
   (assoc
     (cond
       docker-base-image {:docker-image-type :simple-image
@@ -178,8 +177,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
                                                     extra-modules)}
       :else (throw (ex-info "cannot resolve java runtime" {:java-runtime runtime})))
     :version version
-    :java-opts java-opts
-    :platform-architecture platform-architecture))
+    :java-opts java-opts))
 
 (defmulti default-java-opts identity)
 
@@ -227,19 +225,14 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
         ["COPY /app/ /app/"
          "CMD [\"/app/bin/run.sh\"]"]))))
 
-(defn plaftorm-option [platform-architecture]
-  (if platform-architecture
-    (str "--platform=" platform-architecture)
-    ""))
-
-(defn simple-base-image-dockerfile [{:keys [docker-base-image platform-architecture]}]
-  (str "FROM " (plaftorm-option platform-architecture) " " docker-base-image "\n"
+(defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
+  (str "FROM " docker-base-image "\n"
     "COPY /lib/ /lib/anvil/\n"))
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
                                       docker-runtime-base-image
-                                      modules platform-architecture]}]
-  (str "FROM " (plaftorm-option platform-architecture) " " docker-jdk-base-image "\n"
+                                      modules]}]
+  (str "FROM " docker-jdk-base-image "\n"
     "RUN jlink --add-modules " (str/join "," modules) " --output /tmp/jre\n"
     "FROM " docker-runtime-base-image "\n"
     "COPY --from=0 /tmp/jre /jre\n"
@@ -294,8 +287,13 @@ cd \"$dir\" || exit\n"
     (make-executable script-file)
     script-file))
 
-(defn docker-build-body [tag]
-  (str "docker build -t " tag " ."))
+(defn plaftorm-option [platform-architecture]
+  (if platform-architecture
+    (str "--platform=" platform-architecture)
+    ""))
+
+(defn docker-build-body [platform-architecture tag]
+  (str "docker build " (plaftorm-option platform-architecture) " -t " tag " ."))
 
 (defn docker-tag [existing-tag new-tag]
   (str "docker tag " existing-tag " " new-tag))
@@ -346,12 +344,13 @@ cd \"$dir\" || exit\n"
                                        :clean?           true
                                        :aot              aot})
             tag-base                (tag-base docker-registry lib)
+            platform-architecture   (:platform-architecture java-runtime)
             java-runtime            (resolve-java-runtime java-runtime)
             lib-docker-tag          (lib-docker-tag tag-base basis java-runtime)
             docker-lib-dir          (io/file target-dir "docker-lib")
             lib-docker-build-script (generate-docker-script {:target-path docker-lib-dir
                                                              :script-name "docker-build.sh"
-                                                             :body        (docker-build-body lib-docker-tag)})
+                                                             :body        (docker-build-body platform-architecture lib-docker-tag)})
             lib-docker-push-script  (generate-docker-script {:target-path docker-lib-dir
                                                              :script-name "docker-push.sh"
                                                              :body        (docker-push-body lib-docker-tag)})]
@@ -383,7 +382,7 @@ else
    fi
 fi
 "
-                                                                              (docker-build-body app-tag)
+                                                                              (docker-build-body platform-architecture app-tag)
                                                                               "\n"
                                                                               (docker-tag app-tag latest-tag))})
               app-docker-push-script  (generate-docker-script {:target-path docker-app-dir
