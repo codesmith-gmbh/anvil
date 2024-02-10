@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.10.242 (2024-02-10)
+
 # Fixed
 
 - use platform option in the docker build command.
