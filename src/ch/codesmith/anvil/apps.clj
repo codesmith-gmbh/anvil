@@ -121,7 +121,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
    :java21 "eclipse-temurin:21.0.2_13-jdk-jammy"})
 
 (def java-jre-docker-base-images
-  {:java8 "eclipse-temurin:8u402-b06-jre-jammy",
+  {:java8  "eclipse-temurin:8u402-b06-jre-jammy",
    :java11 "eclipse-temurin:11.0.22_7-jre-jammy",
    :java17 "eclipse-temurin:17.0.10_7-jre-jammy",
    :java21 "eclipse-temurin:21.0.2_13-jre-jammy"})
@@ -224,8 +224,13 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
         ["COPY /app/ /app/"
          "CMD [\"/app/bin/run.sh\"]"]))))
 
-(defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
-  (str "FROM " docker-base-image "\n"
+(defn plaftorm-option [platform-architecture]
+  (if platform-architecture
+    (str "--platform=" platform-architecture)
+    ""))
+
+(defn simple-base-image-dockerfile [{:keys [docker-base-image platform-architecture]}]
+  (str "FROM " (plaftorm-option platform-architecture) " " docker-base-image "\n"
     "COPY /lib/ /lib/anvil/\n"))
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
