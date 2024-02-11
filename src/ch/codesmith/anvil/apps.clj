@@ -157,7 +157,8 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
   #{"java.base"})
 
 (defn resolve-java-runtime [{:keys [version type modules-profile extra-modules docker-base-image
-                                    docker-jdk-base-image docker-runtime-base-image java-opts] :as runtime}]
+                                    docker-jdk-base-image docker-runtime-base-image java-opts
+                                    include-locales] :as runtime}]
   (assoc
     (cond
       docker-base-image {:docker-image-type :simple-image
@@ -174,10 +175,13 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
                        :docker-jdk-base-image     (or docker-jdk-base-image (version java-jdk-docker-base-images))
                        :docker-runtime-base-image (or docker-runtime-base-image default-runtime-base-image)
                        :modules                   (into (resolve-modules modules-profile)
-                                                    extra-modules)}
+                                                    (concat extra-modules
+                                                      (when include-locales
+                                                        ["jdk.localedata"])))}
       :else (throw (ex-info "cannot resolve java runtime" {:java-runtime runtime})))
     :version version
-    :java-opts java-opts))
+    :java-opts java-opts
+    :include-locales include-locales))
 
 (defmulti default-java-opts identity)
 
@@ -231,13 +235,17 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
                                       docker-runtime-base-image
-                                      modules]}]
-  (str "FROM " docker-jdk-base-image "\n"
-    "RUN jlink --add-modules " (str/join "," modules) " --output /tmp/jre\n"
-    "FROM " docker-runtime-base-image "\n"
-    "COPY --from=0 /tmp/jre /jre\n"
-    "ENV PATH=/jre/bin:$PATH\n"
-    "COPY /lib/ /lib/anvil/\n"))
+                                      modules include-locales]}]
+  (let [modules-option (str "--add-modules " (str/join "," modules))
+        locales-option (if include-locales
+                         (str "--include-locales=" (str/join "," include-locales))
+                         "")]
+    (str "FROM " docker-jdk-base-image "\n"
+      "RUN jlink " modules-option " " locales-option " --output /tmp/jre\n"
+      "FROM " docker-runtime-base-image "\n"
+      "COPY --from=0 /tmp/jre /jre\n"
+      "ENV PATH=/jre/bin:$PATH\n"
+      "COPY /lib/ /lib/anvil/\n")))
 
 (defn lib-dockerfile [{:keys [target-path java-runtime]}]
   (log/info "Creating the Lib Dockerfile")

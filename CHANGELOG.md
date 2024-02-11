@@ -5,9 +5,13 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+### Added
+
+- :include-locales options for the jlink runtime
+
 ## 0.10.242 (2024-02-10)
 
-# Fixed
+### Fixed
 
 - use platform option in the docker build command.
 
@@ -17,34 +21,34 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## 0.10.233 (2024-02-10)
 
-# Added
+### Added
 
 - option to specify the docker platform architecture.
 
 ## 0.10.230 (2024-02-08)
 
-# Changed
+### Changed
 
 - bump docker base image versions
 - bump dependencies
 
 ## 0.10.227 (2023-12-17)
 
-# Added
+### Added
 
 - fix specify env vars and volumes for the generate dockerfile.
 
-# Changed
+### Changed
 
 - bump docker base image versions
 
 ## 0.10.224 (2023-12-17)
 
-# Added
+### Added
 
 - specify env vars and volumes for the generate dockerfile.
 
-# Changed
+### Changed
 
 - bump dependencies
 
@@ -52,7 +56,7 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## 0.10.216 (2023-11-18)
 
-## Changed / Fixed
+### Changed / Fixed
 
 - BREAKING CHANGE: API change: basis create function as argument instead of basis themselves, as the latter are useless
   as we bind to `*project-root*` inside the functions.

@@ -57,6 +57,7 @@
                                          {:java-runtime         {:version               :java17
                                                                  :type                  :jlink
                                                                  :modules-profile       :java.base
+                                                                 :include-locales       ["de-CH"]
                                                                  :platform-architecture "linux/amd64"}
                                           :clj-runtime          {:main-namespace "test.hello"
                                                                  :script-type    script-type}
