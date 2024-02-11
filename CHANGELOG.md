@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.10.245 (2024-02-11)
+
 ### Added
 
 - :include-locales options for the jlink runtime
