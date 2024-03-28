@@ -126,7 +126,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
    :java17 "eclipse-temurin:17.0.10_7-jre-jammy",
    :java21 "eclipse-temurin:21.0.2_13-jre-jammy"})
 
-(def default-runtime-base-image "ubuntu:jammy-20240125")
+(def default-runtime-base-image "ubuntu:jammy-20240227")
 
 (defmulti resolve-modules identity)
 
