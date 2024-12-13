@@ -43,6 +43,8 @@
    :java19 #"^19\..*-jdk-jammy"
    :java20 #"^20\..*-jdk-jammy"
    :java21 #"^21\..*-jdk-jammy"
+   :java22 #"^22\..*-jdk-jammy"
+   :java23 #"^23\..*-jdk-jammy"
    })
 
 (defn latest-jdk-eclipse-temurin [eclipse-temurin-search]
