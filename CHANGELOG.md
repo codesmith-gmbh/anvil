@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.10.253 (2025-02-12)
+
 ## 0.10.248 (2024-03-28)
 
 ### Changed
