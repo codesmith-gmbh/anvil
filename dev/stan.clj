@@ -1,7 +1,8 @@
 (ns stan
   (:require [ch.codesmith.anvil.apps :as apps]
             [ch.codesmith.anvil.basis :as ab]
-            [hato.client :as hc]))
+            [hato.client :as hc]
+            [portal.api :as p]))
 
 (defn init-url [repository]
   (str "https://hub.docker.com/v2/repositories/library/" repository "/tags?page_size=100"))
@@ -107,5 +108,8 @@
       (filter #(re-find (:name %)))
       (map #(select-keys % [:name :tag_last_pushed])))
     (:results (:body images)))
+
+  (def p (p/open {:launcher :intellij}))
+  (add-tap #'p/submit)
 
   )
