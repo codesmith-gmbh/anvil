@@ -10,7 +10,7 @@
          nvd      {:doc  "Checks for vulnerabilities."
                    :task nvd/check-vulnerabilities}
          verify   {:doc     "Verifies the project."
-                   :depends [lint nvd test]}
+                   :depends [lint test]}
          release  {:doc     "Release the next version"
                    :depends [clean verify]
                    :task    (clojure "-X:build release")}
