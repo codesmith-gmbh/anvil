@@ -5,7 +5,7 @@
 
 (def kondo-config (str (fs/real-path (fs/path ".clj-kondo" "config.edn"))))
 
-(def deps '{:deps      {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
+(def deps '{:deps      {clj-kondo/clj-kondo {:mvn/version "2025.02.20"}}
             :main-opts ["-m" "clj-kondo.main"]})
 
 (def condo-command-prefix
