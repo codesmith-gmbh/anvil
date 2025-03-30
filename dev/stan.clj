@@ -37,25 +37,21 @@
     (search-by-pattern repository search patterns)))
 
 (def jdk-temurin-image-pattern
-  {:java8  #"^8u.*-jdk-jammy"
-   :java11 #"^11\..*-jdk-jammy"
-   :java17 #"^17\..*-jdk-jammy"
-   :java18 #"^18\..*-jdk-jammy"
-   :java19 #"^19\..*-jdk-jammy"
-   :java20 #"^20\..*-jdk-jammy"
-   :java21 #"^21\..*-jdk-jammy"
-   :java22 #"^22\..*-jdk-jammy"
-   :java23 #"^23\..*-jdk-jammy"
+  {:java8  #"^8u.*-jdk-noble"
+   :java11 #"^11\..*-jdk-noble"
+   :java17 #"^17\..*-jdk-noble"
+   :java21 #"^21\..*-jdk-noble"
+   :java24 #"^24.*-jdk-noble"
    })
 
 (defn latest-jdk-eclipse-temurin [eclipse-temurin-search]
   (search-by-pattern "eclipse-temurin" eclipse-temurin-search jdk-temurin-image-pattern))
 
 (def jre-temurin-image-pattern
-  {:java8  #"^8u.*-jre-jammy"
-   :java11 #"^11\..*-jre-jammy"
-   :java17 #"^17\..*-jre-jammy"
-   :java21 #"^21\..*-jre-jammy"
+  {:java8  #"^8u.*-jre-noble"
+   :java11 #"^11\..*-jre-noble"
+   :java17 #"^17\..*-jre-noble"
+   :java21 #"^21\..*-jre-noble"
    })
 
 (defn latest-jre-eclipse-temurin [eclipse-temurin-search]
@@ -67,7 +63,7 @@
      :jre (latest-jre-eclipse-temurin search)}))
 
 (def ubuntu-image-pattern
-  {:jammy #"jammy-*"})
+  {:noble #"noble-*"})
 
 (defn latest-ubuntu []
   (latest-images-by-pattern "ubuntu" ubuntu-image-pattern))
