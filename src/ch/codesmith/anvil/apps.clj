@@ -293,13 +293,13 @@ cd \"$dir\" || exit\n"
     (make-executable script-file)
     script-file))
 
-(defn plaftorm-option [platform-architecture]
+(defn platform-option [platform-architecture]
   (if platform-architecture
     (str "--platform=" platform-architecture)
     ""))
 
-(defn docker-build-body [platform-architecture tag]
-  (str "docker build " (plaftorm-option platform-architecture) " -t " tag " ."))
+(defn docker-build-body [{:keys [command platform-architecture]} tag]
+  (str command " " (platform-option platform-architecture) " -t " tag " ."))
 
 (defn docker-tag [existing-tag new-tag]
   (str "docker tag " existing-tag " " new-tag))
@@ -316,12 +316,14 @@ cd \"$dir\" || exit\n"
                                 clj-runtime
                                 java-runtime
                                 docker-image-options
+                                docker-build-config
                                 docker-registry
                                 description-data
                                 aot]
-                         :or   {java-runtime {:version         :java17
-                                              :type            :jlink
-                                              :modules-profile :anvil}}}]
+                         :or   {java-runtime        {:version         :java17
+                                                     :type            :jlink
+                                                     :modules-profile :anvil}
+                                docker-build-config {:command "docker build"}}}]
   (when (and main-namespace clj-runtime)
     (throw (ex-info (str "only one of :main-namespace or :clj-runtime may be specified")
              {:main-namespace main-namespace
@@ -350,13 +352,14 @@ cd \"$dir\" || exit\n"
                                        :clean?           true
                                        :aot              aot})
             tag-base                (tag-base docker-registry lib)
-            platform-architecture   (:platform-architecture java-runtime)
+            docker-build-config     (merge (select-keys [:platform-architecture] java-runtime)
+                                      docker-build-config)
             java-runtime            (resolve-java-runtime java-runtime)
             lib-docker-tag          (lib-docker-tag tag-base basis java-runtime)
             docker-lib-dir          (io/file target-dir "docker-lib")
             lib-docker-build-script (generate-docker-script {:target-path docker-lib-dir
                                                              :script-name "docker-build.sh"
-                                                             :body        (docker-build-body platform-architecture lib-docker-tag)})
+                                                             :body        (docker-build-body docker-build-config lib-docker-tag)})
             lib-docker-push-script  (generate-docker-script {:target-path docker-lib-dir
                                                              :script-name "docker-push.sh"
                                                              :body        (docker-push-body lib-docker-tag)})]
@@ -388,7 +391,7 @@ else
    fi
 fi
 "
-                                                                              (docker-build-body platform-architecture app-tag)
+                                                                              (docker-build-body docker-build-config app-tag)
                                                                               "\n"
                                                                               (docker-tag app-tag latest-tag))})
               app-docker-push-script  (generate-docker-script {:target-path docker-app-dir

@@ -5,6 +5,15 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+### Added
+
+- option to specify `docker build` command (eg. to use buildx with cache options)
+
+### Changed
+
+- noble as base image
+- bumped dependencies
+
 ## 0.10.253 (2025-02-12)
 
 ## 0.10.248 (2024-03-28)
