@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.10.258 (2025-03-31)
+
 ### Added
 
 - option to specify `docker build` command (eg. to use buildx with cache options)
