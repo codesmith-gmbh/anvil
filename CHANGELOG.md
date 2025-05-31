@@ -5,6 +5,10 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+### Added
+
+- option to control cleaning of the target folder when building apps.
+
 ## 0.10.258 (2025-03-31)
 
 ### Added

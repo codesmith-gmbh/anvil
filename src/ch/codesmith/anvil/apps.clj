@@ -319,11 +319,13 @@ cd \"$dir\" || exit\n"
                                 docker-build-config
                                 docker-registry
                                 description-data
-                                aot]
+                                aot
+                                clean?]
                          :or   {java-runtime        {:version         :java17
                                                      :type            :jlink
                                                      :modules-profile :anvil}
-                                docker-build-config {:command "docker build"}}}]
+                                docker-build-config {:command "docker build"}
+                                clean?              true}}]
   (when (and main-namespace clj-runtime)
     (throw (ex-info (str "only one of :main-namespace or :clj-runtime may be specified")
              {:main-namespace main-namespace
@@ -349,7 +351,7 @@ cd \"$dir\" || exit\n"
                                        :root             (str root)
                                        :target-dir       target-dir
                                        :description-data description-data
-                                       :clean?           true
+                                       :clean?           clean?
                                        :aot              aot})
             tag-base                (tag-base docker-registry lib)
             docker-build-config     (merge (select-keys [:platform-architecture] java-runtime)
