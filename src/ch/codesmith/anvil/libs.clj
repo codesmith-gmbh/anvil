@@ -71,13 +71,6 @@
                          (keep (fn [[lib {:keys [path-key]}]]
                                  (and path-key (str (fs/path root (name lib))))))
                          (:classpath basis))
-            ;; local-root dirs
-            src-dirs   (into src-dirs
-                         (comp
-                           (map second)
-                           (filter :local/root)
-                           (mapcat :paths))
-                         (:libs basis))
             jar-file   (str (io/file target-dir (str (name lib) "-" version ".jar")))]
         (when clean?
           (b/delete {:path (str target-dir)}))
@@ -116,12 +109,12 @@
   (let [target-dir (or target-dir (str (fs/path root-dir "target")))
         class-dir  (or class-dir (fs/path target-dir "classes"))
         pom-file   (str (or pom-file
-                          (fs/path class-dir
-                            "META-INF"
-                            "maven"
-                            (namespace lib)
-                            (name lib)
-                            "pom.xml")))]
+                            (fs/path class-dir
+                              "META-INF"
+                              "maven"
+                              (namespace lib)
+                              (name lib)
+                              "pom.xml")))]
     (deploy/deploy {:artifact        jar-file
                     :installer       installer
                     :pom-file        pom-file
