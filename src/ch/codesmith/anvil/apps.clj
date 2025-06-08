@@ -11,7 +11,7 @@
             [com.rpl.specter :as sp]
             [taoensso.timbre :as log]))
 
-(def anvil-epoch "0.10")
+(def anvil-epoch "0.11")
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
