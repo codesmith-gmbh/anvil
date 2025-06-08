@@ -7,7 +7,7 @@
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as deploy]
-            [taoensso.timbre :as log]))
+            [taoensso.telemere :as t]))
 
 (def ^:dynamic *basis-creation-fn* ab/create-basis)
 
@@ -55,10 +55,10 @@
                            aot]
                     :or   {root "."}}]
   (let [root (fs/absolutize root)]
-    (log/info {:message  "build library"
-               :lib      lib
-               :root-dir root
-               :version  version})
+    (t/log! {:data {:lib      lib
+                    :root-dir root
+                    :version  version}}
+      "build library")
     (binding [b/*project-root* (str root)]
       (let [target-dir (or target-dir (str (fs/path root "target")))
             basis      (*basis-creation-fn*)
@@ -83,8 +83,9 @@
         (b/copy-dir {:src-dirs   src-dirs
                      :target-dir class-dir})
         (when aot
-          (log/debug {:message "aot compiling"
-                      :aot     aot})
+          (t/log! {:level :debug
+                   :aot   aot}
+            "aot compiling")
           (b/compile-clj (merge {:basis        basis
                                  :class-dir    (str (fs/absolutize class-dir))
                                  :src-dirs     (into []

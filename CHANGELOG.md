@@ -5,6 +5,10 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+### Changed
+
+- replace timbre with telemere
+
 ## 0.11.267 (2025-06-08)
 
 ### Fixed

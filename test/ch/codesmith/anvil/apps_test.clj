@@ -6,7 +6,7 @@
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [clojure.tools.build.api :as b]
-            [clojure.tools.logging :as log]))
+            [taoensso.telemere :as t]))
 
 (deftest nondir-full-name-correctness
   (is (= "a" (apps/nondir-full-name "a")))
@@ -67,8 +67,8 @@
                                           :docker-registry      docker-registry
                                           :docker-image-options {:exposed-ports [8000 1400]}}))
         port            5001]
-    (log/info {:app-docker-tag app-docker-tag
-               :lib-docker-tag lib-docker-tag})
+    (t/log! {:data {:app-docker-tag app-docker-tag
+                    :lib-docker-tag lib-docker-tag}} "test-hello-world")
     (try
       ; 1. cleanup
       (rm-registry-images!)

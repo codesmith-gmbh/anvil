@@ -7,8 +7,8 @@
          io.github.codesmith-gmbh/deps-deploy {:git/sha "4e59ecc929729387081155b9177298e7c47b03b5"}
          buddy/buddy-core                     {:mvn/version "1.12.0-430"}
          com.rpl/specter                      {:mvn/version "1.1.4"}
-         com.taoensso/timbre                  {:mvn/version "6.7.1"}
-         com.fzakaria/slf4j-timbre            {:mvn/version "0.4.1"}
+         com.taoensso/telemere                {:mvn/version "1.0.1"}
+         com.taoensso/telemere-slf4j          {:mvn/version "1.0.1"}
          org.clojure/data.xml                 {:mvn/version "0.2.0-alpha9"}
          ;; -- force some dependencies for nvd
          com.google.guava/guava               {:mvn/version "33.4.8-jre"}
@@ -21,7 +21,7 @@
          }
  :aliases
  {:dev            {:extra-paths ["dev" "scripts"]
-                   :extra-deps  {djblue/portal {:mvn/version "0.58.4"}
+                   :extra-deps  {djblue/portal {:mvn/version "0.59.1"}
                                  hato/hato     {:mvn/version "1.0.0"}}}
   :build          {:extra-paths ["build"]
                    :ns-default  build}

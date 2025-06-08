@@ -9,7 +9,7 @@
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
             [com.rpl.specter :as sp]
-            [taoensso.timbre :as log]))
+            [taoensso.telemere :as t]))
 
 (def anvil-epoch "0.11")
 
@@ -206,7 +206,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
                               docker-base-image-name version
                               java-opts exposed-ports env-vars
                               volumes]}]
-  (log/info "Creating the App Dockerfile")
+  (t/log! "Creating the App Dockerfile")
   (spit (fs/path target-path "Dockerfile")
     (str/join "\n"
       (concat
@@ -246,7 +246,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
       "COPY /lib/ /lib/anvil/\n")))
 
 (defn lib-dockerfile [{:keys [target-path java-runtime]}]
-  (log/info "Creating the Lib Dockerfile")
+  (t/log! "Creating the Lib Dockerfile")
   (spit (fs/path target-path "Dockerfile")
     (case (:docker-image-type java-runtime)
       :simple-image (simple-base-image-dockerfile java-runtime)
@@ -331,8 +331,9 @@ cd \"$dir\" || exit\n"
              {:main-namespace main-namespace
               :clj-runtime    clj-runtime})))
   (when main-namespace
-    (log/warn {:main-namespace main-namespace
-               :message        "Use of :main-namespace is deprecated, use :clj-runtime instead"}))
+    (t/log! {:main-namespace main-namespace
+             :level          :warn}
+      "Use of :main-namespace is deprecated, use :clj-runtime instead"))
   (when (and (= (:script-type clj-runtime) :class)
           (not aot))
     (throw (ex-info (str "using the script-type `:class` requires AOT compilation, however :aot is not defined") {})))
@@ -366,7 +367,7 @@ cd \"$dir\" || exit\n"
                                                              :script-name "docker-push.sh"
                                                              :body        (docker-push-body lib-docker-tag)})]
         ; 2. create the docker lib folder
-        (log/debug {:message "copying lib jars"})
+        (t/log! {:level :debug} "copying lib jars")
         (copy-lib-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
         (lib-dockerfile {:target-path  docker-lib-dir
                          :java-runtime java-runtime})
@@ -410,7 +411,7 @@ fi
 " (docker-push-body latest-tag) "
 "
                                                                               )})]
-          (log/debug {:message "copying app jars"})
+          (t/log! {:level :debug} "copying app jars")
           (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
           (b/copy-file {:src    jar-file
                         :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
@@ -427,8 +428,9 @@ fi
                            :volumes                (:volumes docker-image-options)
                            :jar-file               jar-file
                            :java-opts              (:java-opts java-runtime)})
-          (log/info {:app-docker-tag app-docker-tag
-                     :lib-docker-tag lib-docker-tag})
+          (t/log! {:data {:app-docker-tag app-docker-tag
+                          :lib-docker-tag lib-docker-tag}}
+            "docker tags")
           {:app-docker-tag     app-tag
            :lib-docker-tag     lib-docker-tag
            :lib-docker-scripts {:build lib-docker-build-script
