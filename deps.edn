@@ -1,23 +1,23 @@
 {:paths ["src" "resources"]
  :deps  {org.clojure/clojure                  {:mvn/version "1.12.0"}
-         babashka/fs                          {:mvn/version "0.5.24"}
-         io.github.clojure/tools.build        {:mvn/version "0.10.8"
+         babashka/fs                          {:mvn/version "0.5.25"}
+         io.github.clojure/tools.build        {:mvn/version "0.10.9"
                                                :exclusions  [org.slf4j/slf4j-nop]}
          org.clojure/tools.deps.alpha         {:mvn/version "0.15.1254"}
          io.github.codesmith-gmbh/deps-deploy {:git/sha "4e59ecc929729387081155b9177298e7c47b03b5"}
          buddy/buddy-core                     {:mvn/version "1.12.0-430"}
          com.rpl/specter                      {:mvn/version "1.1.4"}
-         com.taoensso/timbre                  {:mvn/version "6.6.1"}
+         com.taoensso/timbre                  {:mvn/version "6.7.1"}
          com.fzakaria/slf4j-timbre            {:mvn/version "0.4.1"}
          org.clojure/data.xml                 {:mvn/version "0.2.0-alpha9"}
          ;; -- force some dependencies for nvd
-         com.google.guava/guava               {:mvn/version "33.4.6-jre"}
-         com.amazonaws/aws-java-sdk-s3        {:mvn/version "1.12.782"}
-         com.amazonaws/aws-java-sdk-sts       {:mvn/version "1.12.782"}
-         commons-io/commons-io                {:mvn/version "2.18.0"}
+         com.google.guava/guava               {:mvn/version "33.4.8-jre"}
+         com.amazonaws/aws-java-sdk-s3        {:mvn/version "1.12.783"}
+         com.amazonaws/aws-java-sdk-sts       {:mvn/version "1.12.783"}
+         commons-io/commons-io                {:mvn/version "20030203.000550"}
          com.cognitect/http-client            {:mvn/version "1.0.127"}
-         org.codehaus.plexus/plexus-cipher    {:mvn/version "2.1.0"}
-         org.eclipse.jetty/jetty-client       {:mvn/version "9.4.54.v20240208"}
+         org.codehaus.plexus/plexus-cipher    {:mvn/version "3.0.0"}
+         org.eclipse.jetty/jetty-client       {:mvn/version "9.4.57.v20241219"}
          }
  :aliases
  {:dev            {:extra-paths ["dev" "scripts"]

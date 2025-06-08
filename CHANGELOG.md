@@ -9,6 +9,10 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 - BREAKING: do not include local deps in jars (they must be packed on their own).
 
+### Changed
+
+- bump dependencies
+
 ## 0.10.261 (2025-05-31)
 
 ### Added

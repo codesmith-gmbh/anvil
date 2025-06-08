@@ -112,19 +112,19 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
     (make-executable script-path)))
 
 (def java-jdk-docker-base-images
-  {:java8  "eclipse-temurin:8u442-b06-jdk-noble",
-   :java11 "eclipse-temurin:11.0.26_4-jdk-noble",
-   :java17 "eclipse-temurin:17.0.14_7-jdk-noble",
-   :java21 "eclipse-temurin:21.0.6_7-jdk-noble",
-   :java24 "eclipse-temurin:24_36-jdk-noble"})
+  {:java8  "eclipse-temurin:8u452-b09-jdk-noble",
+   :java11 "eclipse-temurin:11.0.27_6-jdk-noble",
+   :java17 "eclipse-temurin:17.0.15_6-jdk-noble",
+   :java21 "eclipse-temurin:21.0.7_6-jdk-noble",
+   :java24 "eclipse-temurin:24.0.1_9-jdk-noble"})
 
 (def java-jre-docker-base-images
-  {:java8  "eclipse-temurin:8u442-b06-jre-noble",
-   :java11 "eclipse-temurin:11.0.26_4-jre-noble",
-   :java17 "eclipse-temurin:17.0.14_7-jre-noble",
-   :java21 "eclipse-temurin:21.0.6_7-jre-noble"})
+  {:java8  "eclipse-temurin:8u452-b09-jre-noble",
+   :java11 "eclipse-temurin:11.0.27_6-jre-noble",
+   :java17 "eclipse-temurin:17.0.15_6-jre-noble",
+   :java21 "eclipse-temurin:21.0.7_6-jre-noble"})
 
-(def default-runtime-base-image "ubuntu:noble-20250127")
+(def default-runtime-base-image "ubuntu:noble-20250529")
 
 (defmulti resolve-modules identity)
 
