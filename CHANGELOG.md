@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.11.267 (2025-06-08)
+
 ### Fixed
 
 - BREAKING: do not include local deps in jars (they must be packed on their own).
