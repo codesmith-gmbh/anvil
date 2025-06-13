@@ -87,9 +87,8 @@
 
 (defn default-run-script [& args]
   (str
-    "#!/bin/bash
-DIR=\"$( cd \"$( dirname \"${BASH_SOURCE[0]}\" )\" && pwd )\"
-java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"${DIR}/../lib/*:/lib/anvil/*\" "
+    "#!/bin/sh
+java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
     (str/join " " args)
     "\n"))
 
