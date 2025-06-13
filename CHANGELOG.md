@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.11.273 (2025-06-13)
+
 ### Fixed
 
 - avoid `bash` in docker start script as not all base images have bash installed.
