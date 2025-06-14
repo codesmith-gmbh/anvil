@@ -1,6 +1,6 @@
 (ns ch.codesmith.anvil.libs
   (:require [babashka.fs :as fs]
-            [ch.codesmith.anvil.basis :as ab]
+            [ch.codesmith.anvil.core :as ac]
             [ch.codesmith.anvil.io]
             [ch.codesmith.anvil.pom :as pom]
             [clojure.java.io :as io]
@@ -9,10 +9,8 @@
             [deps-deploy.deps-deploy :as deploy]
             [taoensso.telemere :as t]))
 
-(def ^:dynamic *basis-creation-fn* ab/create-basis)
-
 (defn spit-version-file [{:keys [version dir]}]
-  (let [file (io/file dir "version.edn")]
+  (let [file (b/resolve-path (io/file dir "version.edn"))]
     (io/make-parents file)
     (spit file
       {:version version})))
@@ -48,74 +46,64 @@
                            version
                            with-pom?
                            polylibs
-                           root
-                           target-dir
                            description-data
                            clean?
-                           aot]
-                    :or   {root "."}}]
-  (let [root (fs/absolutize root)]
-    (t/log! {:data {:lib      lib
-                    :root-dir root
-                    :version  version}}
-      "build library")
-    (binding [b/*project-root* (str root)]
-      (let [target-dir (or target-dir (str (fs/path root "target")))
-            basis      (*basis-creation-fn*)
-            basis      (if polylibs
-                         (patch-basis-for-publication basis polylibs version)
-                         basis)
-            class-dir  (str (io/file target-dir "classes"))
-            ;; own src dirs
-            src-dirs   (into []
-                         (keep (fn [[lib {:keys [path-key]}]]
-                                 (and path-key (str (fs/path root (name lib))))))
-                         (:classpath basis))
-            jar-file   (str (io/file target-dir (str (name lib) "-" version ".jar")))]
-        (when clean?
-          (b/delete {:path (str target-dir)}))
-        (when with-pom?
-          (pom/write-pom {:class-dir        class-dir
-                          :lib              lib
-                          :version          version
-                          :basis            basis
-                          :description-data description-data}))
-        (b/copy-dir {:src-dirs   src-dirs
-                     :target-dir class-dir})
-        (when aot
-          (t/log! {:level :debug
-                   :aot   aot}
-            "aot compiling")
-          (b/compile-clj (merge {:basis        basis
-                                 :class-dir    (str (fs/absolutize class-dir))
-                                 :src-dirs     (into []
-                                                 (map (comp str fs/absolutize))
-                                                 src-dirs)
-                                 :compile-opts default-compile-opts}
-                           aot)))
-        (spit-version-file {:version version
-                            :dir     (io/file class-dir
-                                       (lib-resources-dir lib))})
-        (b/jar {:class-dir class-dir
-                :jar-file  jar-file
-                :manifest  {"Implementation-Version" version}})
-        {:jar-file jar-file
-         :basis    basis}))))
+                           aot
+                           basis]
+                    :or   {basis (b/create-basis)}}]
+  (t/log! {:data {:lib     lib
+                  :version version}}
+    "build library")
+  (let [target-dir (ac/target-dir)
+        basis      (if polylibs
+                     (patch-basis-for-publication basis polylibs version)
+                     basis)
+        class-dir  (str (io/file target-dir "classes"))
+        ;; own src dirs
+        src-dirs   (into []
+                     (keep (fn [[lib {:keys [path-key]}]]
+                             (and path-key (name lib))))
+                     (:classpath basis))
+        jar-file   (str (io/file target-dir (str (name lib) "-" version ".jar")))]
+    (when clean?
+      (ac/clean-target-dir))
+    (when with-pom?
+      (pom/write-pom {:class-dir        class-dir
+                      :lib              lib
+                      :version          version
+                      :basis            basis
+                      :description-data description-data}))
+    (b/copy-dir {:src-dirs   src-dirs
+                 :target-dir class-dir})
+    (when aot
+      (t/log! {:level :debug
+               :aot   aot}
+        "aot compiling")
+      (b/compile-clj (merge {:basis        basis
+                             :class-dir    class-dir
+                             :src-dirs     src-dirs
+                             :compile-opts default-compile-opts}
+                       aot)))
+    (spit-version-file {:version version
+                        :dir     (io/file class-dir
+                                   (lib-resources-dir lib))})
+    (b/jar {:class-dir class-dir
+            :jar-file  jar-file
+            :manifest  {"Implementation-Version" version}})
+    {:jar-file jar-file}))
 
-(defn deploy [{:keys [jar-file pom-file root-dir target-dir class-dir lib
+(defn deploy [{:keys [target-dir jar-file pom-file lib
                       installer sign-releases?]
-               :or   {root-dir       "."
-                      installer      :remote
+               :or   {installer      :remote
                       sign-releases? true}}]
-  (let [target-dir (or target-dir (str (fs/path root-dir "target")))
-        class-dir  (or class-dir (fs/path target-dir "classes"))
-        pom-file   (str (or pom-file
-                            (fs/path class-dir
-                              "META-INF"
-                              "maven"
-                              (namespace lib)
-                              (name lib)
-                              "pom.xml")))]
+  (let [class-dir (io/file target-dir "classes")
+        pom-file  (str (or pom-file
+                         (fs/path class-dir
+                           "META-INF"
+                           "maven"
+                           (namespace lib)
+                           (name lib)
+                           "pom.xml")))]
     (deploy/deploy {:artifact        jar-file
                     :installer       installer
                     :pom-file        pom-file

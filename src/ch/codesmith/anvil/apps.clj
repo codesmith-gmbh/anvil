@@ -1,17 +1,46 @@
 (ns ch.codesmith.anvil.apps
   (:require [babashka.fs :as fs]
+            [babashka.process :as ps]
             [buddy.core.codecs :as bc]
             [buddy.core.hash :as hash]
-            [ch.codesmith.anvil.basis :as ab]
+            [ch.codesmith.anvil.core :as ac]
             [ch.codesmith.anvil.io]
             [ch.codesmith.anvil.libs :as libs]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
             [com.rpl.specter :as sp]
-            [taoensso.telemere :as t]))
+            [taoensso.telemere :as t])
+  (:import (com.google.cloud.tools.jib.api Containerizer DockerDaemonImage Jib JibContainerBuilder RegistryImage TarImage)
+           (com.google.cloud.tools.jib.api.buildplan AbsoluteUnixPath FileEntriesLayer FileEntriesLayer$Builder FilePermissions Platform Port)
+           (java.nio.file Path)))
 
-(def anvil-epoch "0.11")
+(def anvil-epoch "0.12")
+
+(defmulti default-java-opts identity)
+
+(defmethod default-java-opts
+  :java8
+  [_]
+  "-XX:MaxRAMPercentage=80")
+
+(defmethod default-java-opts
+  :java11
+  [_]
+  "-XX:MaxRAMPercentage=80")
+
+(defmethod default-java-opts
+  :default
+  [_]
+  "-XX:MaxRAMPercentage=80 -XX:+UseZGC")
+
+(defn normalize-config [{:keys [version lib-image] :as config}]
+  (-> config
+    (update-in [:app-image :options :env-vars]
+      #(merge {:VERSION   version
+               :LOCATION  ":docker"
+               :JAVA_OPTS (default-java-opts (:java-version lib-image))}
+         %))))
 
 (defn nondir-full-name
   "Creates a name separated by '--' instead of '/'; named stuff get separated"
@@ -29,19 +58,18 @@
   (nondir-full-name lib (str version ".jar")))
 
 (defmulti copy-jar
-  {:arglists '([lib props jar-dir target-dir])}
-  (fn [_ props _ _]
+  {:arglists '([lib props jar-dir])}
+  (fn [_ props _]
     (:deps/manifest props)))
 
 (defmethod copy-jar
   :deps
-  [lib {:keys [git/tag git/sha deps/root anvil/version]} jar-dir target-dir]
-  (let [target-dir     (io/file target-dir (nondir-full-name lib))
+  [lib {:keys [git/tag git/sha anvil/version]} jar-dir]
+  (let [target-dir     (io/file (ac/target-dir) "copy-jar" (nondir-full-name lib))
         version        (or version (if tag (str tag "-" sha) sha))
         {:keys [jar-file]} (libs/jar {:lib        lib
                                       :version    version
                                       :with-pom?  false
-                                      :root       root
                                       :target-dir target-dir
                                       :clean?     true})
         copy-file-args {:src    jar-file
@@ -50,7 +78,7 @@
 
 (defmethod copy-jar
   :mvn
-  [lib props jar-dir _]
+  [lib props jar-dir]
   (let [jar-file (full-jar-file-name lib (:mvn/version props))
         path     (sp/select-one! [:paths sp/ALL] props)]
     (b/copy-file {:src    path
@@ -67,20 +95,20 @@
           [lib (get libs lib)]))
       used-libs)))
 
-(defn copy-jars [basis lib-filter props-trans jar-dir target-dir]
+(defn copy-jars [basis lib-filter props-trans jar-dir]
   (let [all-libs (all-libs basis)]
     (doseq [[lib props] all-libs]
       (when (lib-filter props)
-        (copy-jar lib (props-trans props) jar-dir target-dir)))))
+        (copy-jar lib (props-trans props) jar-dir)))))
 
 (defn is-local-dep? [props]
   (:local/root props))
 
-(defn copy-lib-jars [basis jar-dir target-dir]
-  (copy-jars basis (complement is-local-dep?) identity jar-dir target-dir))
+(defn copy-lib-jars [basis jar-dir]
+  (copy-jars basis (complement is-local-dep?) identity jar-dir))
 
-(defn copy-app-jars [basis local-version jar-dir target-dir]
-  (copy-jars basis is-local-dep? #(assoc % :anvil/version local-version) jar-dir target-dir))
+(defn copy-app-jars [basis local-version jar-dir]
+  (copy-jars basis is-local-dep? #(assoc % :anvil/version local-version) jar-dir))
 
 (defn make-executable [f]
   (fs/set-posix-file-permissions f "rwxr-xr-x"))
@@ -92,7 +120,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
     (str/join " " args)
     "\n"))
 
-(defmulti clj-run-script :script-type)
+(defmulti clj-run-script :type)
 
 (defmethod clj-run-script :clojure.main
   [{:keys [main-namespace]}]
@@ -102,12 +130,12 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
   [{:keys [main-namespace]}]
   (default-run-script (str/replace main-namespace "-" "_")))
 
-(defn generate-app-run-script [{:keys [target clj-runtime]}]
-  (let [bin-dir-path (fs/path target "bin")
+(defn generate-app-run-script [target-dir script]
+  (let [bin-dir-path (fs/path target-dir "bin")
         script-path  (fs/path bin-dir-path "run.sh")]
     (fs/create-dirs bin-dir-path)
     (spit script-path
-      (clj-run-script clj-runtime))
+      (clj-run-script script))
     (make-executable script-path)))
 
 (def java-jdk-docker-base-images
@@ -180,54 +208,8 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
     :java-opts java-opts
     :include-locales include-locales))
 
-(defmulti default-java-opts identity)
-
-(defmethod default-java-opts
-  :java17
-  [_]
-  "-XX:MaxRAMPercentage=85 -XX:+UseZGC")
-
-(defmethod default-java-opts
-  :java21
-  [_]
-  "-XX:MaxRAMPercentage=85 -XX:+UseZGC")
-
-(defmethod default-java-opts
-  :default
-  [_]
-  "-XX:MaxRAMPercentage=85")
-
-(defn escape-double-quote [text]
-  (str/escape text {\" "\\\""
-                    \\ "\\"}))
-
-(defn app-dockerfile [{:keys [target-path java-version
-                              docker-base-image-name version
-                              java-opts exposed-ports env-vars
-                              volumes]}]
-  (t/log! "Creating the App Dockerfile")
-  (spit (fs/path target-path "Dockerfile")
-    (str/join "\n"
-      (concat
-        [(str "FROM " docker-base-image-name)]
-        (map (fn [port]
-               (str "EXPOSE " port))
-          exposed-ports)
-        (map (fn [[key value]]
-               (str "ENV " (name key) "=\"" (escape-double-quote value) "\""))
-          (merge
-            {:VERSION   version
-             :LOCATION  ":docker"
-             :JAVA_OPTS (or java-opts (default-java-opts java-version))}
-            env-vars))
-        (map (fn [volume]
-               (str "VOLUME " volume))
-          volumes)
-        ["COPY /app/ /app/"
-         "CMD [\"/app/bin/run.sh\"]"]))))
-
-(defn simple-base-image-dockerfile [{:keys [docker-base-image]}]
-  (str "FROM " docker-base-image "\n"
+(defn simple-base-image-dockerfile [{:keys [base-image]}]
+  (str "FROM " base-image "\n"
     "COPY /lib/ /lib/anvil/\n"))
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
@@ -244,61 +226,57 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
       "ENV PATH=/jre/bin:$PATH\n"
       "COPY /lib/ /lib/anvil/\n")))
 
-(defn lib-dockerfile [{:keys [target-path java-runtime]}]
+(defn generate-lib-dockerfile [target-path lib-image]
   (t/log! "Creating the Lib Dockerfile")
   (spit (fs/path target-path "Dockerfile")
-    (case (:docker-image-type java-runtime)
-      :simple-image (simple-base-image-dockerfile java-runtime)
-      :jlink-image (jlink-image-dockerfile java-runtime))))
+    (simple-base-image-dockerfile lib-image)
+    #_(case (:docker-image-type lib-image)
+        :simple-image (simple-base-image-dockerfile lib-image)
+        :jlink-image (jlink-image-dockerfile lib-image))))
 
-(defn tag-base [docker-registry lib]
-  (let [namespace (namespace lib)]
-    (str (if docker-registry (str docker-registry "/") "")
-      (if namespace (str namespace "/") "")
-      (name lib)
-      ":")))
+(defn tag-base [{:keys [lib image-base]}]
+  (or (:tag-base image-base)
+    (let [registry  (:registry image-base)
+          namespace (namespace lib)]
+      (str (if registry (str registry "/") "")
+        (if namespace (str namespace "/") "")
+        (name lib)
+        ":"))))
 
 (defn app-docker-tag
-  ([tag-base version]
-   (str tag-base version))
-  ([docker-registry lib version]
-   (app-docker-tag (tag-base docker-registry lib) version)))
+  ([config]
+   (app-docker-tag config (:version config)))
+  ([config version]
+   (str (tag-base config) version)))
 
-(defn lib-docker-tag [tag-base basis java-runtime]
+(defn lib-image-tag ^String [{:keys [basis
+                                     image-base
+                                     lib-image]
+                              :as   config}]
   (let [serialized-libs (pr-str
-                          {:java-runtime (dissoc java-runtime :java-opts)
-                           :anvil-epoch  anvil-epoch
-                           :libs         (into []
-                                           (map (fn [[lib coords]]
-                                                  [lib (dissoc coords :dependents :parents :paths :exclusions
-                                                         :deps/root)]))
-                                           (all-libs basis))})
+                          {:image-base  image-base
+                           :lib-image   lib-image
+                           :anvil-epoch anvil-epoch
+                           :libs        (into []
+                                          (map (fn [[lib coords]]
+                                                 [lib (dissoc coords :dependents :parents :paths :exclusions)]))
+                                          (all-libs basis))})
         hash            (bc/bytes->hex (hash/sha3-256 serialized-libs))]
-    (str tag-base "lib-" hash)))
+    (str (tag-base config) "lib-" hash)))
 
-(defn generate-docker-script [{:keys [target-path
-                                      script-name
-                                      body]}]
-  (fs/create-dirs target-path)
-  (let [script-file (fs/path target-path script-name)]
-    (spit script-file
-      (str "#!/bin/bash\n"
-        "set -e\n"
-        "dir=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\n"
-        "(
-cd \"$dir\" || exit\n"
-        "  " body
-        "\n)\n"))
-    (make-executable script-file)
-    script-file))
-
-(defn platform-option [platform-architecture]
-  (if platform-architecture
-    (str "--platform=" platform-architecture)
+(defn platform-option [platform]
+  (if platform
+    (str "--platform=" platform)
     ""))
 
-(defn docker-build-body [{:keys [command platform-architecture]} tag]
-  (str command " " (platform-option platform-architecture) " -t " tag " ."))
+(defn docker-builder-config [{:keys [base-image]}]
+  (let [platform       (sp/select-one [:platforms sp/ALL] base-image)
+        builder-config (assoc (:builder base-image) :platform platform)]
+    builder-config))
+
+(defn docker-build-body [config tag]
+  (let [{:keys [build-command platform]} (docker-builder-config config)]
+    (str "docker " (or build-command "build") " " (platform-option platform) " -t " tag " .")))
 
 (defn docker-tag [existing-tag new-tag]
   (str "docker tag " existing-tag " " new-tag))
@@ -306,133 +284,282 @@ cd \"$dir\" || exit\n"
 (defn docker-push-body [tag]
   (str "docker push " tag))
 
-(defn docker-generator [{:keys [lib
-                                version
-                                root
-                                basis-creation-fn
-                                target-dir
-                                main-namespace
-                                clj-runtime
-                                java-runtime
-                                docker-image-options
-                                docker-build-config
-                                docker-registry
-                                description-data
-                                aot
-                                clean?]
-                         :or   {java-runtime        {:version         :java17
-                                                     :type            :jlink
-                                                     :modules-profile :anvil}
-                                docker-build-config {:command "docker build"}
-                                clean?              true}}]
-  (when (and main-namespace clj-runtime)
-    (throw (ex-info (str "only one of :main-namespace or :clj-runtime may be specified")
-             {:main-namespace main-namespace
-              :clj-runtime    clj-runtime})))
-  (when main-namespace
-    (t/log! {:main-namespace main-namespace
-             :level          :warn}
-      "Use of :main-namespace is deprecated, use :clj-runtime instead"))
-  (when (and (= (:script-type clj-runtime) :class)
-          (not aot))
-    (throw (ex-info (str "using the script-type `:class` requires AOT compilation, however :aot is not defined") {})))
-  (let [clj-runtime (or clj-runtime
-                        {:main-namespace main-namespace
-                         :script-type    :clojure.main})
-        root        (fs/absolutize (fs/path (or root ".")))]
-    (binding [libs/*basis-creation-fn* (or basis-creation-fn ab/create-basis)
-              b/*project-root*         (str root)]
-      (let [target-dir              (str (or target-dir (fs/path root "target")))
-            ; 1. create the jar file for the project
-            {:keys [jar-file
-                    basis]} (libs/jar {:lib              lib
-                                       :version          version
-                                       :with-pom?        false
-                                       :root             (str root)
-                                       :target-dir       target-dir
-                                       :description-data description-data
-                                       :clean?           clean?
-                                       :aot              aot})
-            tag-base                (tag-base docker-registry lib)
-            docker-build-config     (merge (select-keys [:platform-architecture] java-runtime)
-                                      docker-build-config)
-            java-runtime            (resolve-java-runtime java-runtime)
-            lib-docker-tag          (lib-docker-tag tag-base basis java-runtime)
-            docker-lib-dir          (io/file target-dir "docker-lib")
-            lib-docker-build-script (generate-docker-script {:target-path docker-lib-dir
-                                                             :script-name "docker-build.sh"
-                                                             :body        (docker-build-body docker-build-config lib-docker-tag)})
-            lib-docker-push-script  (generate-docker-script {:target-path docker-lib-dir
-                                                             :script-name "docker-push.sh"
-                                                             :body        (docker-push-body lib-docker-tag)})]
-        ; 2. create the docker lib folder
-        (t/log! {:level :debug} "copying lib jars")
-        (copy-lib-jars basis (io/file docker-lib-dir "lib") (io/file target-dir "libs"))
-        (lib-dockerfile {:target-path  docker-lib-dir
-                         :java-runtime java-runtime})
-        ; 3. create the docker app folder
-        (let [docker-app-dir          (io/file target-dir "docker-app")
-              app-dir                 (io/file docker-app-dir "app")
-              app-lib-dir             (io/file app-dir "lib")
-              app-tag                 (app-docker-tag tag-base version)
-              versioned-app-tag       (app-docker-tag tag-base "\"${VERSION}\"")
-              latest-tag              (app-docker-tag tag-base "latest")
-              app-docker-build-script (generate-docker-script {:target-path docker-app-dir
-                                                               :script-name "docker-build.sh"
-                                                               :body        (str
-                                                                              "
-             if docker image inspect " lib-docker-tag " >/dev/null; then
-   echo \"The base image " lib-docker-tag "  exists\"
-else
-   echo \"The base image " lib-docker-tag " does not exists locally; pulling\"
-   if docker pull " lib-docker-tag " >/dev/null; then
-     echo \"Base image " lib-docker-tag " pulled.\"
-   else
-     echo \"The base image " lib-docker-tag " does not exists remotely; building\"
-     ../docker-lib/docker-build.sh
-   fi
-fi
-"
-                                                                              (docker-build-body docker-build-config app-tag)
-                                                                              "\n"
-                                                                              (docker-tag app-tag latest-tag))})
-              app-docker-push-script  (generate-docker-script {:target-path docker-app-dir
-                                                               :script-name "docker-push.sh"
-                                                               :body        (str "
-../docker-lib/docker-push.sh
-VERSION=\"$1\"
-if [ -z \"$VERSION\" ]
-then
-  " (docker-push-body app-tag) "
-else
-  " (docker-tag app-tag versioned-app-tag) "\n  " (docker-push-body versioned-app-tag) "
-fi
-" (docker-push-body latest-tag) "
-"
-                                                                              )})]
-          (t/log! {:level :debug} "copying app jars")
-          (copy-app-jars basis version app-lib-dir (io/file target-dir "libs"))
-          (b/copy-file {:src    jar-file
-                        :target (str (io/file app-lib-dir (fs/file-name jar-file)))})
-          (libs/spit-version-file {:version version
-                                   :dir     app-dir})
-          (generate-app-run-script {:target      app-dir
-                                    :clj-runtime clj-runtime})
-          (app-dockerfile {:target-path            docker-app-dir
-                           :java-version           (:version java-runtime)
-                           :docker-base-image-name lib-docker-tag
-                           :version                version
-                           :exposed-ports          (:exposed-ports docker-image-options)
-                           :env-vars               (:env-vars docker-image-options)
-                           :volumes                (:volumes docker-image-options)
-                           :jar-file               jar-file
-                           :java-opts              (:java-opts java-runtime)})
-          (t/log! {:data {:app-docker-tag app-docker-tag
-                          :lib-docker-tag lib-docker-tag}}
-            "docker tags")
-          {:app-docker-tag     app-tag
-           :lib-docker-tag     lib-docker-tag
-           :lib-docker-scripts {:build lib-docker-build-script
-                                :push  lib-docker-push-script}
-           :app-docker-scripts {:build app-docker-build-script
-                                :push  app-docker-push-script}})))))
+(defn lib-image-target-dir []
+  (io/file (ac/target-dir) "lib-image"))
+
+(defn prepare-lib-image-build [{:keys [basis]}]
+  (let [lib-image-target-dir (lib-image-target-dir)
+        lib-image-lib-dir    (io/file lib-image-target-dir "lib")]
+    (copy-lib-jars basis lib-image-lib-dir)
+    {:target-dir (b/resolve-path lib-image-target-dir)
+     :lib-dir    (b/resolve-path lib-image-lib-dir)}))
+
+
+(defmulti docker-build-image
+  {:arglists '([image-type config])}
+  (fn [image-type _]
+    image-type))
+
+(defmulti docker-push-image
+  {:arglists '([image-type config])}
+  (fn [image-type _]
+    image-type))
+
+(defmethod docker-build-image :lib-image
+  [_ {:keys [lib-image] :as config}]
+  (let [{:keys [target-dir]} (prepare-lib-image-build config)
+        image-tag (lib-image-tag config)]
+    (generate-lib-dockerfile target-dir lib-image)
+    (ps/shell {:dir target-dir} (docker-build-body config image-tag))))
+
+(defmethod docker-push-image :lib-image
+  [_ config]
+  (let [image-tag (lib-image-tag config)]
+    (ps/shell (docker-push-body image-tag))))
+
+(defn app-image-target-dir []
+  (io/file (ac/target-dir) "app-image"))
+
+(defn compile-app [{:keys [lib
+                           version
+                           jar
+                           app-image
+                           basis]
+                    :as   config}]
+  (when (and (= (-> app-image :script :type) :class)
+          (not (:aot jar)))
+    (throw (IllegalArgumentException. "using the script type `:class` requires AOT compilation, however :aot is not defined")))
+  (let [{:keys [jar-file]} (libs/jar (merge {:lib       lib
+                                             :version   version
+                                             :with-pom? false
+                                             :clean?    false
+                                             :basis     basis}
+                                       jar))
+        app-image-target-dir (app-image-target-dir)
+        app-image-app-dir    (io/file app-image-target-dir "app")
+        resolved-target-dir  (b/resolve-path app-image-target-dir)
+        resolved-app-dir     (b/resolve-path app-image-app-dir)]
+    (b/copy-file {:src    jar-file
+                  :target (str (io/file app-image-app-dir
+                                 "lib"
+                                 (.getName (io/file jar-file))))})
+    (generate-app-run-script
+      resolved-app-dir
+      (:script app-image))
+    (libs/spit-version-file {:version version
+                             :dir     app-image-app-dir})
+    {:target-dir resolved-target-dir
+     :app-dir    resolved-app-dir
+     :image-tag  (app-docker-tag config version)}))
+
+(defn escape-double-quote [text]
+  (str/escape text {\" "\\\""
+                    \\ "\\"}))
+
+(defn generate-app-dockerfile [target-dir {:keys [app-image]
+                                           :as   config}]
+  (t/log! "Creating the App Dockerfile")
+  (spit (io/file target-dir "Dockerfile")
+    (str/join "\n"
+      (concat
+        [(str "FROM " (lib-image-tag config))]
+        (map (fn [port]
+               (str "EXPOSE " port))
+          (:exposed-ports app-image))
+        (map (fn [[key value]]
+               (str "ENV " (name key) "=\"" (escape-double-quote value) "\""))
+          (:env-vars app-image))
+        (map (fn [volume]
+               (str "VOLUME " volume))
+          (:volumes app-image))
+        ["COPY /app/ /app/"
+         "CMD [\"/app/bin/run.sh\"]"]))))
+
+(defmethod docker-build-image :app-image
+  [_ config]
+  (let [tag-name (app-docker-tag config)
+        {:keys [target-dir]} (compile-app config)
+        build!   #(ps/shell {:dir target-dir} (docker-build-body config tag-name))]
+    (generate-app-dockerfile target-dir config)
+    (try
+      (build!)
+      (catch Exception _
+        (docker-build-image :lib-image config)
+        (build!)))))
+
+(defn image-exists-locally? [image-tag]
+  (->
+    (ps/sh "docker images -q" image-tag)
+    (ps/check)
+    :out
+    str/blank?
+    not))
+
+(defmethod docker-push-image :app-image
+  [_ config]
+  (when (image-exists-locally? (lib-image-tag config))
+    (docker-push-image :lib-image config))
+  (ps/shell (docker-push-body (app-docker-tag config))))
+
+(defn image-ref [image-spec image-tag]
+  (into [(first image-spec) image-tag]
+    (rest image-spec)))
+
+(defmulti jib-build-image
+  {:arglists '([image-type image-spec config])}
+  (fn [image-type _ _]
+    image-type))
+
+(defn jib-image-ref [[type ^String image-tag {:keys [username password]}]]
+  (case type
+    :registry (let [image (RegistryImage/named image-tag)]
+                (when (and username password)
+                  (.addCredential image username password))
+                image)
+    :tar (TarImage/at (fs/path image-tag))
+    :local (DockerDaemonImage/named image-tag)))
+
+(defn reduce-jib-image-builder [base-image xfs]
+  (transduce
+    (keep identity)
+    (completing
+      (fn [builder f]
+        (f builder)))
+    (Jib/from (jib-image-ref base-image))
+    xfs))
+
+(defn jib-files-layer-xf [^FileEntriesLayer files]
+  (fn [^JibContainerBuilder builder]
+    (.addFileEntriesLayer builder files)))
+
+(defn jib-dir-content-layer-xf [name src dest]
+  (let [root        (fs/path src)
+        destination (fs/path dest)
+        files       (transduce
+                      (filter fs/regular-file?)
+                      (fn
+                        ([^FileEntriesLayer$Builder builder]
+                         (.build builder))
+                        ([^FileEntriesLayer$Builder builder
+                          ^Path file]
+                         (.addEntry
+                           builder
+                           file
+                           (AbsoluteUnixPath/fromPath
+                             (fs/path destination (fs/relativize root file)))
+                           (FilePermissions/fromPosixFilePermissions
+                             (fs/posix-file-permissions file)))))
+                      (.setName
+                        (FileEntriesLayer/builder)
+                        name)
+                      (fs/glob root
+                        "**"))]
+    (jib-files-layer-xf files)))
+
+(defn jib-platforms-xf [config]
+  (when-let [platforms (-> config :image-base :platforms)]
+    (fn [^JibContainerBuilder builder]
+      (.setPlatforms builder (into #{}
+                               (map (fn [{:keys [os architecture]}]
+                                      (Platform.
+                                        architecture
+                                        os)))
+                               platforms)))))
+
+(defn jib-image-xf [image-ref]
+  (fn [^JibContainerBuilder builder]
+    (.containerize builder
+      (Containerizer/to
+        (jib-image-ref image-ref)))))
+
+(defmethod jib-build-image :lib-image
+  [_ image-spec {:keys [lib-image]
+                 :as   config}]
+  (let [{:keys [lib-dir]} (prepare-lib-image-build config)]
+    (reduce-jib-image-builder
+      (:base-image lib-image)
+      [(jib-dir-content-layer-xf "lib" lib-dir "/lib/anvil/")
+       (jib-platforms-xf config)
+       (jib-image-xf (image-ref image-spec (lib-image-tag config)))])))
+
+(defn jib-volumes-xf [volumes]
+  (when volumes
+    (fn [^JibContainerBuilder builder]
+      (reduce
+        (fn [^JibContainerBuilder builder volume]
+          (.addVolume builder (AbsoluteUnixPath/get volume)))
+        builder
+        volumes))))
+
+(defn to-port ^Port [port]
+  (if (integer? port)
+    (Port/tcp port)
+    (case (first port)
+      :udp (Port/udp port)
+      :tcp (Port/tcp port))))
+
+(defn jib-exposed-ports-xf [exposed-ports]
+  (when exposed-ports
+    (fn [^JibContainerBuilder builder]
+      (reduce
+        (fn [^JibContainerBuilder builder port]
+          (.addVolume builder (to-port port)))
+        builder
+        exposed-ports))))
+
+(defn jib-env-vars-xf [env-vars]
+  (when env-vars
+    (fn [^JibContainerBuilder builder]
+      (reduce
+        (fn [^JibContainerBuilder builder [key value]]
+          (.addEnvironmentVariable builder (name key) (str value)))
+        builder
+        env-vars))))
+
+(defn jib-run-app-xf []
+  (fn [^JibContainerBuilder builder]
+    (.setProgramArguments builder ["/app/bin/run.sh"])))
+
+(defmethod jib-build-image :app-image
+  [_
+   image-spec
+   {:keys [app-image]
+    :as   config}]
+  (let [{:keys [image-tag app-dir]} (compile-app config)
+        builder-fn #(reduce-jib-image-builder
+                      (image-ref image-spec (lib-image-tag config))
+                      [(jib-platforms-xf config)
+                       (jib-volumes-xf (:volumes app-image))
+                       (jib-exposed-ports-xf (:expored-ports app-image))
+                       (jib-env-vars-xf (:env-vars app-image))
+                       (jib-run-app-xf)
+                       (jib-dir-content-layer-xf "app" app-dir "/app/")
+                       (jib-image-xf (image-ref image-spec image-tag))])]
+    (try
+      (t/log! "build")
+      (builder-fn)
+      (catch Exception _
+        (t/log! "build image first")
+        (jib-build-image :lib-image image-spec config)
+        (builder-fn)))))
+
+(comment
+
+  (b/with-project-root "test/helloworld"
+    (let [config (normalize-config
+                   {:lib        'hello/world
+                    :version    "1.2.0"
+                    :basis      (b/create-basis)
+                    :jar        {:opts nil
+                                 :aot  {}}
+                    :image-base {}
+                    :lib-image  {:image-type :jib
+                                 :base-image [:registry "eclipse-temurin:21.0.7_6-jre-noble"]}
+                    :app-image  {:script {:type           :class
+                                          :main-namespace "test.hello"}}
+                    })]
+      (jib-build-image :app-image [:local] config)
+      #_(docker-build-image
+          :app-image
+          config))))
+

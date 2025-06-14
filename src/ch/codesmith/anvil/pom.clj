@@ -69,17 +69,17 @@
            (and url [::pom/url url])
            (and inception-year [::pom/inceptionYear inception-year])
            (and organization (into [::pom/organization]
-                                   (keep identity)
-                                   [(pull-down organization :name ::pom/name)
-                                    (pull-down organization :url ::pom/url)]))
+                               (keep identity)
+                               [(pull-down organization :name ::pom/name)
+                                (pull-down organization :url ::pom/url)]))
            (and authors (into [::pom/developers]
-                              (map (fn [{:keys [name email]}]
-                                     (into [::pom/developer]
-                                           (keep (fn [[_ value :as entry]]
-                                                   (and value entry)))
-                                           [[::pom/name name]
-                                            [::pom/email email]])))
-                              authors))
+                          (map (fn [{:keys [name email]}]
+                                 (into [::pom/developer]
+                                   (keep (fn [[_ value :as entry]]
+                                           (and value entry)))
+                                   [[::pom/name name]
+                                    [::pom/email email]])))
+                          authors))
            (and license [::pom/licenses (license-element license)])
            (and scm [::pom/scm
                      [::pom/url (scm-project-url scm)]
@@ -92,15 +92,15 @@
     :content
     (fn [content]
       (concat content
-              (description-xml-fragments description-data)))))
+        (description-xml-fragments description-data)))))
 
 (defn pom-file [{:keys [class-dir lib]}]
   (fs/path class-dir
-           "META-INF"
-           "maven"
-           (namespace lib)
-           (name lib)
-           "pom.xml"))
+    "META-INF"
+    "maven"
+    (namespace lib)
+    (name lib)
+    "pom.xml"))
 
 (defn write-pom [{:keys [class-dir lib version basis description-data] :as param}]
   (b/write-pom {:class-dir class-dir
@@ -108,7 +108,7 @@
                 :version   version
                 :basis     basis})
   (when description-data
-    (let [pom-file (pom-file param)
+    (let [pom-file (b/resolve-path (str (pom-file param)))
           pom      (xml/parse-str (slurp pom-file) :skip-whitespace true)
           pom      (add-description-data pom description-data)]
       (spit pom-file (xml/indent-str pom)))))

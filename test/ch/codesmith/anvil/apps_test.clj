@@ -1,5 +1,6 @@
 (ns ch.codesmith.anvil.apps-test
   (:require [ch.codesmith.anvil.apps :as apps]
+            [ch.codesmith.anvil.core :as ac]
             [ch.codesmith.anvil.helloworld :as hw]
             [ch.codesmith.anvil.shell :as sh]
             [clojure.edn :as edn]
@@ -19,18 +20,6 @@
 (def lib 'ch.codesmith/anvil)
 (def version (str "0.2." (b/git-count-revs {})))
 
-(defn test-docker-generator [aot]
-  (apps/docker-generator {:lib            lib
-                          :version        version
-                          :root           "."
-                          :aot            aot
-                          :main-namespace "test"})
-  (is true))
-
-(deftest docker-generator-correctness
-  (test-docker-generator nil)
-  (test-docker-generator {}))
-
 (defn start-registry! [port]
   (sh/sh! "docker" "run" "-d" "-p" (str port ":5000") "--name" "registry" "registry:2"))
 
@@ -49,49 +38,59 @@
     (docker-rmi! image)))
 
 (defn test-hello-world [aot script-type]
-  (let [docker-registry "localhost:5001"
-        {:keys [app-docker-tag
-                lib-docker-tag
-                app-docker-scripts]} (apps/docker-generator
-                                       (merge hw/base-properties
-                                         {:java-runtime         {:version         :java17
-                                                                 :type            :jlink
-                                                                 :modules-profile :java.base
-                                                                 :include-locales ["de-CH"]
-                                                                 ;; TODO@stan: find out how to work on mac with alternative architecture
-                                                                 ;:platform-architecture "linux/amd64"
-                                                                 }
-                                          :clj-runtime          {:main-namespace "test.hello"
-                                                                 :script-type    script-type}
-                                          :aot                  aot
-                                          :docker-registry      docker-registry
-                                          :docker-image-options {:exposed-ports [8000 1400]}}))
-        port            5001]
-    (t/log! {:data {:app-docker-tag app-docker-tag
-                    :lib-docker-tag lib-docker-tag}} "test-hello-world")
-    (try
-      ; 1. cleanup
-      (rm-registry-images!)
-      ; 2. startup local registry
-      (start-registry! port)
-      ; 3. build push pull run
-      (sh/sh! (str (:build app-docker-scripts)))
-      (sh/sh! (str (:push app-docker-scripts)))
-      (docker-rmi! app-docker-tag)
-      (sh/sh! "docker" "pull" app-docker-tag)
-      (let [out       (sh/sh "docker" "run" "--rm" app-docker-tag)
-            last-line (last (str/split-lines out))
-            {:keys [resource version-file implementation-version]} (edn/read-string last-line)]
-        (is (= version-file {:version version}))
-        (is (= implementation-version (if aot version "undefined")))
-        (is (= resource (str "jar:file:/app/lib/hello-" version ".jar!/resource.edn"))))
-      ; 4. build with lib in registry
-      (docker-rmi! app-docker-tag)
-      (docker-rmi! lib-docker-tag)
-      (sh/sh! (str (:build app-docker-scripts)))
-      ; 5. shut down local registry
-      (finally
-        (force-stop-registry!)))))
+  (hw/with-root-dir
+    (ac/clean-target-dir)
+    (let [docker-registry "localhost:5001"
+          config          (merge hw/base-properties
+                            {:basis      (b/create-basis)
+                             :jar        {:opts nil
+                                          :aot  aot}
+                             :image-base {:registry docker-registry}
+                             :lib-image  {:base-image "eclipse-temurin:21.0.7_6-jre-noble"}
+                             :app-image  {:script {:type           script-type
+                                                   :main-namespace "test.hello"}}
+                             }
+
+                            #_{:java-runtime         {:version         :java17
+                                                      :type            :jlink
+                                                      :modules-profile :java.base
+                                                      :include-locales ["de-CH"]
+                                                      ;; TODO@stan: find out how to work on mac with alternative architecture
+                                                      ;:platform-architecture "linux/amd64"
+                                                      }
+                               :clj-runtime          {:main-namespace "test.hello"
+                                                      :script-type    script-type}
+                               :aot                  aot
+                               :docker-registry      docker-registry
+                               :docker-image-options {:exposed-ports [8000 1400]}})
+          app-docker-tag  (apps/app-docker-tag config)
+          lib-docker-tag  (apps/lib-image-tag config)
+          port            5001]
+      (t/log! {:data {:app-docker-tag app-docker-tag
+                      :lib-docker-tag lib-docker-tag}} "test-hello-world")
+      (try
+        ; 1. cleanup
+        (rm-registry-images!)
+        ; 2. startup local registry
+        (start-registry! port)
+        ; 3. build push pull run
+        (apps/docker-build-image :app-image config)
+        (apps/docker-push-image :app-image config)
+        (docker-rmi! app-docker-tag)
+        (sh/sh! "docker" "pull" app-docker-tag)
+        (let [out       (sh/sh "docker" "run" "--rm" app-docker-tag)
+              last-line (last (str/split-lines out))
+              {:keys [resource version-file implementation-version]} (edn/read-string last-line)]
+          (is (= version-file {:version version}))
+          (is (= implementation-version (if aot version "undefined")))
+          (is (= resource (str "jar:file:/app/lib/hello-" version ".jar!/resource.edn"))))
+        ; 4. build with lib in registry
+        (docker-rmi! app-docker-tag)
+        (docker-rmi! lib-docker-tag)
+        (apps/docker-build-image :app-image config)
+        ; 5. shut down local registry
+        (finally
+          (force-stop-registry!))))))
 
 (deftest hello-world-correctness
   (testing "without aot / clojure.main"
@@ -105,5 +104,5 @@
   (testing "without aot / class"
     (is (thrown-with-msg?
           Exception
-          #"using the script-type `:class` requires AOT compilation, however :aot is not defined"
+          #"using the script type `:class` requires AOT compilation, however :aot is not defined"
           (test-hello-world nil :class)))))
