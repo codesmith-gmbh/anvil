@@ -5,6 +5,11 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+### Changed
+
+- BREAKING: new config format / no jlink / new release calls (will be further refactored)
+- first steps toward using jib instead alongside generated Dockerfiles
+
 ## 0.11.273 (2025-06-13)
 
 ### Fixed

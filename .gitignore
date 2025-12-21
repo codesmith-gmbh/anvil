@@ -1,4 +1,4 @@
-/target
+target/
 /classes
 /checkouts
 *.jar
@@ -11,4 +11,3 @@
 /anvil.iml
 /.DS_Store
 /.clj-kondo/.cache/
-/test/helloworld/target

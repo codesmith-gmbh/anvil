@@ -42,30 +42,29 @@
 
 (defn fcoalesce [f a1 a2]
   (or (f a1)
-      (f a2)))
+    (f a2)))
 
 (defn update-changelog-file [file {:keys [version local-date]}]
   (replace-in-file file
-                   (fn [text]
-                     (str/replace text
-                                  #"(?m)^## Unreleased(.*)$"
-                                  (str "## Unreleased\n\n## " version " (" local-date ")")))))
+    (fn [text]
+      (str/replace text
+        #"(?m)^## Unreleased(.*)$"
+        (str "## Unreleased\n\n## " version " (" local-date ")")))))
 
 (defmulti dependency-line (fn [#_:clj-kondo/ignore data artifact] (or (:artifact-type artifact) :deps)))
 
 (defmethod dependency-line :deps [data {:keys [deps-coords] :as artifact}]
   (let [tag (git-version-tag (fcoalesce :version artifact data))]
-    (str deps-coords " {:git/tag \""
-         tag "\" :git/sha \""
-         (short-sha tag) "\"}")))
+    (str (-> deps-coords :lib) " {:git/tag \""
+      tag "\" :git/sha \""
+      (short-sha tag) "\"}")))
 
 (defmethod dependency-line :mvn [data {:keys [deps-coords] :as artifact}]
-  (str deps-coords " {:mvn/version \"" (fcoalesce :version artifact data) "\"}"))
+  (str (-> deps-coords :lib) " {:mvn/version \"" (fcoalesce :version artifact data) "\"}"))
 
-(defmethod dependency-line :docker-image [data {:keys [deps-coords] :as artifact}]
-  (let [docker-tag (aa/app-docker-tag (fcoalesce :docker-registry artifact data)
-                                      deps-coords
-                                      (fcoalesce :version artifact data))]
+(defmethod dependency-line :docker-image [data artifact]
+  (let [docker-tag (aa/app-docker-tag (:deps-coords artifact)
+                     (fcoalesce :version artifact data))]
     (str "docker pull " docker-tag)))
 
 (defn update-readme [{:keys [artifacts] :as data}]
@@ -74,14 +73,14 @@
       content
       #"```deps.*(?s:.*?)```"
       (str "```deps\n"
-           (str/join "\n"
-                     (map (partial dependency-line data)
-                          artifacts))
-           "\n```"))))
+        (str/join "\n"
+          (map (partial dependency-line data)
+            artifacts))
+        "\n```"))))
 
 (defn default-update-for-release [data]
   (replace-in-file "README.md"
-                   (update-readme data)))
+    (update-readme data)))
 
 (defn git-release! [{:keys [release-branch-name update-for-release version]
                      :or   {update-for-release default-update-for-release}
