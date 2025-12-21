@@ -7,6 +7,7 @@
 (def version (str apps/anvil-epoch "." (b/git-count-revs {})))
 
 (defn release [_]
-  (rel/git-release! {:artifacts           [{:deps-coords lib}]
+  (rel/git-release! {:artifacts           [{:deps-coords   {:lib lib}
+                                            :artifact-type :deps}]
                      :version             version
                      :release-branch-name "master"}))
