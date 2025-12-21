@@ -138,78 +138,25 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
       (clj-run-script script))
     (make-executable script-path)))
 
-(def java-jdk-docker-base-images
-  {:java8  "eclipse-temurin:8u452-b09-jdk-noble",
-   :java11 "eclipse-temurin:11.0.27_6-jdk-noble",
-   :java17 "eclipse-temurin:17.0.15_6-jdk-noble",
-   :java21 "eclipse-temurin:21.0.7_6-jdk-noble",
-   :java24 "eclipse-temurin:24.0.1_9-jdk-noble"})
+(def predefined-images
+  {:jdk8  "eclipse-temurin:8u472-b08-jdk-noble",
+   :jdk11 "eclipse-temurin:11.0.29_7-jdk-noble",
+   :jdk17 "eclipse-temurin:17.0.17_10-jdk-noble",
+   :jdk21 "eclipse-temurin:21.0.9_10-jdk-noble",
+   :jdk25 "eclipse-temurin:25.0.1_8-jdk-noble"
 
-(def java-jre-docker-base-images
-  {:java8  "eclipse-temurin:8u452-b09-jre-noble",
-   :java11 "eclipse-temurin:11.0.27_6-jre-noble",
-   :java17 "eclipse-temurin:17.0.15_6-jre-noble",
-   :java21 "eclipse-temurin:21.0.7_6-jre-noble"})
+   :jre8  "eclipse-temurin:8u472-b08-jre-noble",
+   :jre11 "eclipse-temurin:11.0.29_7-jre-noble",
+   :jre17 "eclipse-temurin:17.0.17_10-jre-noble",
+   :jre21 "eclipse-temurin:21.0.9_10-jre-noble",
+   :jre25 "eclipse-temurin:25.0.1_8-jre-noble"
+   })
 
-(def default-runtime-base-image "ubuntu:noble-20250529")
+(defn resolve-base-image [{:keys [base-image]}]
+  (get predefined-images base-image base-image))
 
-(defmulti resolve-modules identity)
-
-(defmethod resolve-modules :anvil [_]
-  #{"java.base"
-    "java.datatransfer"
-    "java.instrument"
-    "java.logging"
-    "java.management"
-    "java.management.rmi"
-    "java.naming"
-    "java.net.http"
-    "java.prefs"
-    "java.rmi"
-    "java.security.jgss"
-    "java.security.sasl"
-    "java.sql"
-    "java.sql.rowset"
-    "java.transaction.xa"
-    "java.xml"
-    "java.xml.crypto"
-    "jdk.unsupported"})
-
-(defmethod resolve-modules :java.se [_]
-  #{"java.se"})
-
-(defmethod resolve-modules :java.base [_]
-  #{"java.base"})
-
-(defn resolve-java-runtime [{:keys [version type modules-profile extra-modules docker-base-image
-                                    docker-jdk-base-image docker-runtime-base-image java-opts
-                                    include-locales] :as runtime}]
-  (assoc
-    (cond
-      docker-base-image {:docker-image-type :simple-image
-                         :docker-base-image docker-base-image}
-      (= type :jdk) {:docker-image-type :simple-image
-                     :docker-base-image (version java-jdk-docker-base-images)}
-      (= type :jre) (if-let [docker-base-image (version java-jre-docker-base-images)]
-                      {:docker-image-type :simple-image
-                       :docker-base-image docker-base-image}
-                      (throw (ex-info (str "no jre images for java version " version)
-                               {:version      version
-                                :java-runtime runtime})))
-      (= type :jlink) {:docker-image-type         :jlink-image
-                       :docker-jdk-base-image     (or docker-jdk-base-image (version java-jdk-docker-base-images))
-                       :docker-runtime-base-image (or docker-runtime-base-image default-runtime-base-image)
-                       :modules                   (into (resolve-modules modules-profile)
-                                                    (concat extra-modules
-                                                      (when include-locales
-                                                        ["jdk.localedata"])))}
-      :else (throw (ex-info "cannot resolve java runtime" {:java-runtime runtime})))
-    :version version
-    :java-opts java-opts
-    :include-locales include-locales))
-
-(defn simple-base-image-dockerfile [{:keys [base-image]}]
-  (str "FROM " base-image "\n"
+(defn simple-base-image-dockerfile [lib-image]
+  (str "FROM " (resolve-base-image lib-image) "\n"
     "COPY /lib/ /lib/anvil/\n"))
 
 (defn jlink-image-dockerfile [{:keys [docker-jdk-base-image
@@ -477,7 +424,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
                  :as   config}]
   (let [{:keys [lib-dir]} (prepare-lib-image-build config)]
     (reduce-jib-image-builder
-      (:base-image lib-image)
+      (resolve-base-image lib-image)
       [(jib-dir-content-layer-xf "lib" lib-dir "/lib/anvil/")
        (jib-platforms-xf config)
        (jib-image-xf (image-ref image-spec (lib-image-tag config)))])))
@@ -542,24 +489,3 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
         (t/log! "build image first")
         (jib-build-image :lib-image image-spec config)
         (builder-fn)))))
-
-(comment
-
-  (b/with-project-root "test/helloworld"
-    (let [config (normalize-config
-                   {:lib        'hello/world
-                    :version    "1.2.0"
-                    :basis      (b/create-basis)
-                    :jar        {:opts nil
-                                 :aot  {}}
-                    :image-base {}
-                    :lib-image  {:image-type :jib
-                                 :base-image [:registry "eclipse-temurin:21.0.7_6-jre-noble"]}
-                    :app-image  {:script {:type           :class
-                                          :main-namespace "test.hello"}}
-                    })]
-      (jib-build-image :app-image [:local] config)
-      #_(docker-build-image
-          :app-image
-          config))))
-

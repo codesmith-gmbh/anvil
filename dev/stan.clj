@@ -37,31 +37,22 @@
   (let [search (latest-images-search repository)]
     (search-by-pattern repository search patterns)))
 
-(def jdk-temurin-image-pattern
-  {:java8  #"^8u.*-jdk-noble"
-   :java11 #"^11\..*-jdk-noble"
-   :java17 #"^17\..*-jdk-noble"
-   :java21 #"^21\..*-jdk-noble"
-   :java24 #"^24.*-jdk-noble"
+(def java-temurin-image-pattern
+  {:jdk8  #"^8u.*-jdk-noble"
+   :jdk11 #"^11\..*-jdk-noble"
+   :jdk17 #"^17\..*-jdk-noble"
+   :jdk1  #"^21\..*-jdk-noble"
+   :jdk25 #"^25.*-jdk-noble"
+
+   :jre8  #"^8u.*-jre-noble"
+   :jre11 #"^11\..*-jre-noble"
+   :jre17 #"^17\..*-jre-noble"
+   :jre21 #"^21\..*-jre-noble"
+   :jre25 #"^25\..*-jre-noble"
    })
-
-(defn latest-jdk-eclipse-temurin [eclipse-temurin-search]
-  (search-by-pattern "eclipse-temurin" eclipse-temurin-search jdk-temurin-image-pattern))
-
-(def jre-temurin-image-pattern
-  {:java8  #"^8u.*-jre-noble"
-   :java11 #"^11\..*-jre-noble"
-   :java17 #"^17\..*-jre-noble"
-   :java21 #"^21\..*-jre-noble"
-   })
-
-(defn latest-jre-eclipse-temurin [eclipse-temurin-search]
-  (search-by-pattern "eclipse-temurin" eclipse-temurin-search jre-temurin-image-pattern))
 
 (defn latest-eclipse-temurin []
-  (let [search (latest-images-search "eclipse-temurin")]
-    {:jdk (latest-jdk-eclipse-temurin search)
-     :jre (latest-jre-eclipse-temurin search)}))
+  (latest-images-by-pattern "eclipse-temurin"  java-temurin-image-pattern))
 
 (def ubuntu-image-pattern
   {:noble #"noble-*"})
@@ -71,47 +62,8 @@
 
 (comment
 
-  (Jib/from "")
-
-  (fs/list-dir "test/helloworld/target/classes" "**")
-
-  (fs/glob "test/helloworld/target/classes" "**")
-
-
   (latest-eclipse-temurin)
   (latest-ubuntu)
-
-  (apps/make-docker-artifact {:main-namespace 'codesmith.anvil.artifacts
-                              :lib-name       'anvic
-                              :aliases        []
-                              :version        "1.0.0"
-                              :java-runtime   {:version         :java17
-                                               :type            :jre
-                                               :modules-profile :anvil
-                                               :extra-modules   #{"java.se"}}
-                              :basis-opts     {:user :standard}
-                              :aot?           false})
-
-  (:mvn/repos
-    (ab/create-basis {:user :standard}))
-
-
-  (def basis (ab/create-basis {:project "deps.edn"}))
-
-  (keys basis)
-
-  (def images
-    (hc/get "https://hub.docker.com/v2/repositories/library/eclipse-temurin/tags?page_size=100"
-      {:as :json}))
-
-  (:tag_last_pushed (first (:results (:body images))))
-
-  (into []
-    (comp
-      (filter :name)
-      (filter #(re-find (:name %)))
-      (map #(select-keys % [:name :tag_last_pushed])))
-    (:results (:body images)))
 
   (def p (p/open {:launcher :intellij}))
   (add-tap #'p/submit)

@@ -46,23 +46,10 @@
                              :jar        {:opts nil
                                           :aot  aot}
                              :image-base {:registry docker-registry}
-                             :lib-image  {:base-image "eclipse-temurin:21.0.7_6-jre-noble"}
+                             :lib-image  {:base-image :jre25}
                              :app-image  {:script {:type           script-type
                                                    :main-namespace "test.hello"}}
-                             }
-
-                            #_{:java-runtime         {:version         :java17
-                                                      :type            :jlink
-                                                      :modules-profile :java.base
-                                                      :include-locales ["de-CH"]
-                                                      ;; TODO@stan: find out how to work on mac with alternative architecture
-                                                      ;:platform-architecture "linux/amd64"
-                                                      }
-                               :clj-runtime          {:main-namespace "test.hello"
-                                                      :script-type    script-type}
-                               :aot                  aot
-                               :docker-registry      docker-registry
-                               :docker-image-options {:exposed-ports [8000 1400]}})
+                             })
           app-docker-tag  (apps/app-docker-tag config)
           lib-docker-tag  (apps/lib-image-tag config)
           port            5001]
