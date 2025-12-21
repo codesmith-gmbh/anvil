@@ -5,6 +5,8 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+## 0.12.279 (2025-12-21)
+
 ### Changed
 
 - BREAKING: new config format / no jlink / new release calls (will be further refactored)
