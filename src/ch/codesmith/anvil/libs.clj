@@ -37,11 +37,6 @@
     basis
     polylibs))
 
-(def default-compile-opts
-  {:elide-meta     [:doc :file :line :since]
-   :direct-linking false                                    ;; fix specter compilation problem before setting true
-   })
-
 (defn jar ^String [{:keys [lib
                            version
                            with-pom?
@@ -60,9 +55,12 @@
                      basis)
         class-dir  (str (io/file target-dir "classes"))
         ;; own src dirs
+        libs       (:libs basis)
         src-dirs   (into []
-                     (keep (fn [[lib {:keys [path-key]}]]
-                             (and path-key (name lib))))
+                     (keep (fn [[lib {:keys [path-key lib-name]}]]
+                             (or
+                               (and path-key (name lib))
+                               (:local/root (libs lib-name)))))
                      (:classpath basis))
         jar-file   (str (io/file target-dir (str (name lib) "-" version ".jar")))]
     (when clean?

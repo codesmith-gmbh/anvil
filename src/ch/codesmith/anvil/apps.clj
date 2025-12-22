@@ -15,7 +15,49 @@
            (com.google.cloud.tools.jib.api.buildplan AbsoluteUnixPath FileEntriesLayer FileEntriesLayer$Builder FilePermissions Platform Port)
            (java.nio.file Path)))
 
-(def anvil-epoch "0.12")
+(def anvil-epoch "0.13")
+
+(def default-compile-opts
+  {:elide-meta     [:doc :file :line :since]
+   :direct-linking false})
+
+(defn src-dirs
+  "All the src dirs for the application, it consists of all src dirs of the classpath as well
+  as all src dirs of the `:local/root` submodules"
+  [basis]
+  (let [libs (:libs basis)]
+    (into []
+      (keep (fn [[lib {:keys [path-key lib-name]}]]
+              (or
+                (and path-key (name lib))
+                (:local/root (libs lib-name)))))
+      (:classpath basis))))
+
+(defn build-app-jar ^String [basis app-name version {:keys [aot]}]
+  (t/log! {:data {:version version}}
+    "build application jar")
+  (let [target-dir (ac/target-dir)
+        class-dir  (str (ac/classes-dir))
+        src-dirs   (src-dirs basis)
+        jar-file   (str (io/file target-dir (str (name app-name) "-" version ".jar")))]
+    (b/copy-dir {:src-dirs   src-dirs
+                 :target-dir class-dir})
+    (when aot
+      (t/log! {:level :debug
+               :aot   aot}
+        "aot compiling")
+      (b/compile-clj (merge {:basis        basis
+                             :class-dir    class-dir
+                             :src-dirs     src-dirs
+                             :compile-opts default-compile-opts}
+                       aot)))
+    (libs/spit-version-file {:version version
+                             :dir     (io/file class-dir
+                                        (libs/lib-resources-dir app-name))})
+    (b/jar {:class-dir class-dir
+            :jar-file  jar-file
+            :manifest  {"Implementation-Version" version}})
+    jar-file))
 
 (defmulti default-java-opts identity)
 
@@ -181,13 +223,13 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
         :simple-image (simple-base-image-dockerfile lib-image)
         :jlink-image (jlink-image-dockerfile lib-image))))
 
-(defn tag-base [{:keys [lib image-base]}]
+(defn tag-base [{:keys [app-name image-base]}]
   (or (:tag-base image-base)
     (let [registry  (:registry image-base)
-          namespace (namespace lib)]
+          namespace (namespace app-name)]
       (str (if registry (str registry "/") "")
         (if namespace (str namespace "/") "")
-        (name lib)
+        (name app-name)
         ":"))))
 
 (defn app-docker-tag
@@ -267,7 +309,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
 (defn app-image-target-dir []
   (io/file (ac/target-dir) "app-image"))
 
-(defn compile-app [{:keys [lib
+(defn compile-app [{:keys [app-name
                            version
                            jar
                            app-image
@@ -276,12 +318,7 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
   (when (and (= (-> app-image :script :type) :class)
           (not (:aot jar)))
     (throw (IllegalArgumentException. "using the script type `:class` requires AOT compilation, however :aot is not defined")))
-  (let [{:keys [jar-file]} (libs/jar (merge {:lib       lib
-                                             :version   version
-                                             :with-pom? false
-                                             :clean?    false
-                                             :basis     basis}
-                                       jar))
+  (let [jar-file             (build-app-jar basis app-name version jar)
         app-image-target-dir (app-image-target-dir)
         app-image-app-dir    (io/file app-image-target-dir "app")
         resolved-target-dir  (b/resolve-path app-image-target-dir)
