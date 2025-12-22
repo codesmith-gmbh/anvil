@@ -43,7 +43,6 @@
                            polylibs
                            description-data
                            clean?
-                           aot
                            basis]
                     :or   {basis (b/create-basis)}}]
   (t/log! {:data {:lib     lib
@@ -73,15 +72,6 @@
                       :description-data description-data}))
     (b/copy-dir {:src-dirs   src-dirs
                  :target-dir class-dir})
-    (when aot
-      (t/log! {:level :debug
-               :aot   aot}
-        "aot compiling")
-      (b/compile-clj (merge {:basis        basis
-                             :class-dir    class-dir
-                             :src-dirs     src-dirs
-                             :compile-opts default-compile-opts}
-                       aot)))
     (spit-version-file {:version version
                         :dir     (io/file class-dir
                                    (lib-resources-dir lib))})
