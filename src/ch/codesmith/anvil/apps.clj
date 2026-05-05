@@ -216,9 +216,9 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
     (str "--platform=" platform)
     ""))
 
-(defn docker-builder-config [{:keys [base-image]}]
-  (let [platform       (sp/select-one [:platforms sp/ALL] base-image)
-        builder-config (assoc (:builder base-image) :platform platform)]
+(defn docker-builder-config [{:keys [image-base]}]
+  (let [platform       (sp/select-one [:platforms sp/ALL] image-base)
+        builder-config (assoc (:builder image-base) :platform platform)]
     builder-config))
 
 (defn docker-build-body [config tag]
