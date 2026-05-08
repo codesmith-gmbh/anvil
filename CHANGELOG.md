@@ -5,9 +5,13 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+### Fixed
+
+- platform usage for docker images (fix 2)
+
 ## 0.12.282 (2026-05-05)
 
-## Fixed
+### Fixed
 
 - platform usage for docker images
 

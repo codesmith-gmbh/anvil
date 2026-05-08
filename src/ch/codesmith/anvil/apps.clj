@@ -212,8 +212,8 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
     (str (tag-base config) "lib-" hash)))
 
 (defn platform-option [platform]
-  (if platform
-    (str "--platform=" platform)
+  (if-let [{:keys [os architecture]} platform]
+    (str "--platform=" os "/" architecture)
     ""))
 
 (defn docker-builder-config [{:keys [image-base]}]
@@ -255,9 +255,12 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
 (defmethod docker-build-image :lib-image
   [_ {:keys [lib-image] :as config}]
   (let [{:keys [target-dir]} (prepare-lib-image-build config)
-        image-tag (lib-image-tag config)]
+        image-tag            (lib-image-tag config)
+        docker-build-command (docker-build-body config image-tag)]
     (generate-lib-dockerfile target-dir lib-image)
-    (ps/shell {:dir target-dir} (docker-build-body config image-tag))))
+    (t/log! {:data {:docker-build-command docker-build-command
+                    :image-type           :lib-image}})
+    (ps/shell {:dir target-dir} docker-build-command)))
 
 (defmethod docker-push-image :lib-image
   [_ config]
@@ -324,9 +327,12 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
 
 (defmethod docker-build-image :app-image
   [_ config]
-  (let [tag-name (app-docker-tag config)
+  (let [tag-name             (app-docker-tag config)
         {:keys [target-dir]} (compile-app config)
-        build!   #(ps/shell {:dir target-dir} (docker-build-body config tag-name))]
+        docker-build-command (docker-build-body config tag-name)
+        build!               #(ps/shell {:dir target-dir} docker-build-command)]
+    (t/log! {:data {:docker-build-command docker-build-command
+                    :image-type           :lib-image}})
     (generate-app-dockerfile target-dir config)
     (try
       (build!)
