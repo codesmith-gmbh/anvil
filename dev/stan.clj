@@ -1,9 +1,27 @@
 (ns stan
   (:require
-    [babashka.fs :as fs]
-    [ch.codesmith.anvil.apps :as apps]
+    [babashka.process :as ps]
+    [clojure.string :as str]
     [hato.client :as hc]
     [portal.api :as p]))
+
+(defn op-read [path]
+  (->> path
+    (ps/process {:out :string} "op" "read")
+    (ps/check)
+    :out
+    str/trim))
+
+(defonce access-token
+  (delay
+    (->
+      (hc/post "https://hub.docker.com/v2/auth/token"
+        {:form-params  {:identifier (op-read "op://Codesmith/Docker/username")
+                        :secret     (op-read "op://Codesmith/Docker/anvil")}
+         :as           :json
+         :content-type :json})
+      :body
+      :access_token)))
 
 (defn init-url [repository]
   (str "https://hub.docker.com/v2/repositories/library/" repository "/tags?page_size=100"))
@@ -11,7 +29,8 @@
 (defn latest-images-search [repository]
   (let [step (fn [url]
                (-> url
-                 (hc/get {:as :json})
+                 (hc/get {:as          :json
+                          :oauth-token @access-token})
                  :body))
         tags (into []
                (comp
@@ -41,7 +60,7 @@
   {:jdk8  #"^8u.*-jdk-noble"
    :jdk11 #"^11\..*-jdk-noble"
    :jdk17 #"^17\..*-jdk-noble"
-   :jdk1  #"^21\..*-jdk-noble"
+   :jdk21  #"^21\..*-jdk-noble"
    :jdk25 #"^25.*-jdk-noble"
 
    :jre8  #"^8u.*-jre-noble"
@@ -52,7 +71,7 @@
    })
 
 (defn latest-eclipse-temurin []
-  (latest-images-by-pattern "eclipse-temurin"  java-temurin-image-pattern))
+  (latest-images-by-pattern "eclipse-temurin" java-temurin-image-pattern))
 
 (def ubuntu-image-pattern
   {:noble #"noble-*"})

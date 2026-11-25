@@ -139,17 +139,17 @@ java -Dfile.encoding=UTF-8 ${JAVA_OPTS} -cp \"/app/lib/*:/lib/anvil/*\" "
     (make-executable script-path)))
 
 (def predefined-images
-  {:jdk8  "eclipse-temurin:8u472-b08-jdk-noble",
-   :jdk11 "eclipse-temurin:11.0.29_7-jdk-noble",
-   :jdk17 "eclipse-temurin:17.0.17_10-jdk-noble",
-   :jdk21 "eclipse-temurin:21.0.9_10-jdk-noble",
-   :jdk25 "eclipse-temurin:25.0.1_8-jdk-noble"
+  {:jdk8  "eclipse-temurin:8u512-b09-jdk-noble",
+   :jdk11 "eclipse-temurin:11.0.33_10-jdk-noble",
+   :jdk17 "eclipse-temurin:17.0.21.1_2-jdk-noble",
+   :jdk21 "eclipse-temurin:21.0.13.1_2-jdk-noble",
+   :jdk25 "eclipse-temurin:25.0.5.1_2-jdk-noble",
 
-   :jre8  "eclipse-temurin:8u472-b08-jre-noble",
-   :jre11 "eclipse-temurin:11.0.29_7-jre-noble",
-   :jre17 "eclipse-temurin:17.0.17_10-jre-noble",
-   :jre21 "eclipse-temurin:21.0.9_10-jre-noble",
-   :jre25 "eclipse-temurin:25.0.1_8-jre-noble"
+   :jre8  "eclipse-temurin:8u512-b09-jre-noble"
+   :jre11 "eclipse-temurin:11.0.33_10-jre-noble",
+   :jre17 "eclipse-temurin:17.0.21.1_2-jre-noble",
+   :jre21 "eclipse-temurin:21.0.13.1_2-jre-noble",
+   :jre25 "eclipse-temurin:25.0.5.1_2-jre-noble",
    })
 
 (defn resolve-base-image [{:keys [base-image]}]

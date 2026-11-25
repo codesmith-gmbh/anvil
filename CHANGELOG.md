@@ -5,6 +5,10 @@ of [keepachangelog.com](http://keepachangelog.com/).
 
 ## Unreleased
 
+### Changed
+
+- bump java base images
+
 ## 0.12.285 (2026-05-08)
 
 ### Fixed
